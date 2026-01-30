@@ -834,8 +834,10 @@
     settings: "tms_settings_v1",
     loads: "tms_loads_v1",
     dirs: "tms_dirs_v1",
-    meta: "tms_meta_v1"
+    meta: "tms_meta_v1",
+    remit: "tms_default_remit_v1"   // 👈 ADD THIS
   };
+
 
   const $ = (id) => document.getElementById(id);
   const q = (sel, root=document) => root.querySelector(sel);
@@ -919,6 +921,7 @@ const saveJSON = (k, v) => {
   let dirs = loadJSON(KEY.dirs, null) || structuredClone(dirDefaults);
   let loads = loadJSON(KEY.loads, []) || [];
   let meta = loadJSON(KEY.meta, {lastTruck:"", lastTrailer:""}) || {lastTruck:"", lastTrailer:""};
+  let defaultRemit = loadJSON(KEY.remit, "") || "";
 
   const canStorage = (() => {
     try {
@@ -1207,6 +1210,9 @@ Thank you.`;
 
 function autoSaveRemittance(manual = false){
   const remit = $("f_remit")?.value || "";
+  defaultRemit = remit;
+  saveJSON(KEY.remit, remit);   // 👈 global save
+
 
   // If no load yet, force draft creation
   if (!currentLoadId){
@@ -1404,7 +1410,7 @@ function autoSaveRemittance(manual = false){
     $("f_hoursAway").value = (l?.hoursAway ?? "") === null ? "" : (l?.hoursAway ?? "");
     $("f_misc").value = l?.misc ?? 0;
 
-    $("f_remit").value = l?.remit || "";
+    $("f_remit").value = l?.remit || defaultRemit || "";
     $("f_netTerms").value = l?.netTerms || "";
     $("f_invoiceNo").value = l?.invoiceNo || "";
     $("f_invoiceDate").value = l?.invoiceDate || "";
@@ -1636,6 +1642,10 @@ function renderMileageTotals(){
       useLastEq: true
     });
 
+  if (defaultRemit) {
+    $("f_remit").value = defaultRemit;
+  }
+    
     if (meta.lastTruck || meta.lastTrailer){
       if ($("f_useLastEq").value === "true"){
         $("f_truck").value = meta.lastTruck || "";
