@@ -669,11 +669,11 @@
 
   <div class="invoice-header">
     <div>
-<h1>Invoice <span id="invNumber">#4273</span></h1>
+<h1>Invoice <span id="invNumber">—</span></h1>
 <div class="mini" style="margin-top:6px">For Load: <b id="invLoadId">—</b></div>
     </div>
     <div class="invoice-meta">
-      <div><strong>Date:</strong> 01/23/2026</div>
+      <div><strong>Date:</strong> <span id="invDate">—</span></div>
       <div><strong>Terms:</strong> NET 10 DAYS</div>
     </div>
   </div>
@@ -717,7 +717,7 @@
         <span id="invToBlock">—</span><br><br>
 
 
-          Remittance Address: Phoenix Capital Group, PO BOX 1415, Des Moines, IA 50305
+          Remittance Address: <span id="invRemit">—</span>
         </td>
         <td id="invPrimaryFee">$—</td>
         <td id="invSubTotal">$—</td>
@@ -1902,6 +1902,34 @@ const top = `
 
         // Go to the Invoice tab
         setTab("invoice");
+
+        // Invoice number: use load.invoiceNo if present, otherwise generate/store one
+        let invNo = l.invoiceNo;
+        if (!invNo) {
+          const key = "tms_next_invoice_no";
+          const next = Number(localStorage.getItem(key) || "4274"); // pick a starting number you like
+          invNo = next;
+          localStorage.setItem(key, String(next + 1));
+          // also store on load so it stays consistent for that load
+          l.invoiceNo = invNo;
+          saveLoads?.(); // only if your app has a save function; if not, ignore this line
+        }
+        const invEl = $("invNumber");
+        if (invEl) invEl.textContent = "#" + invNo;
+
+        const d = (l.invoiceDate || new Date().toLocaleDateString());
+        const dateEl = $("invDate");
+        if (dateEl) dateEl.textContent = d;
+
+        // Remittance address from settings (fallback to blank)
+        const remit =
+          (settings?.remittanceAddress)
+          || (settings?.remitAddress)
+          || ""; // keep it blank if not configured
+
+        const remitEl = $("invRemit");
+        if (remitEl) remitEl.textContent = remit || "—";
+        
       });
     });
 
