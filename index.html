@@ -703,7 +703,7 @@
     </thead>
     <tbody>
       <tr>
-        <td>4574</td>
+        <td><span id="invLoadNum">—</span></td>
         <td>
           <strong>BOL:</strong> <span id="invBOL">—</span><br>
           Pickup Date: <span id="invPickupDate">—</span><br>
@@ -1844,7 +1844,7 @@ const top = `
         if (invLoadIdEl) invLoadIdEl.textContent = l.loadId || l.id || "—";
 
         const invNumberEl = $("invNumber");
-        if (invNumberEl) invNumberEl.textContent = "#" + (l.invoiceNo || "4273");
+        if (invNumberEl) invNumberEl.textContent = l.invoiceNo ? "#" + l.invoiceNo : "—";
 
         const invBOLel = $("invBOL");
         if (invBOLel) invBOLel.textContent = l.bol || l.loadId || l.id || "—";
