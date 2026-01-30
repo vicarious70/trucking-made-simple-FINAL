@@ -1243,6 +1243,7 @@ if (delBtn) delBtn.style.display = currentLoadId ? "" : "none";
     $("tlSub").textContent = currentLoadId ? "Edit and Save anytime." : "Save Draft anytime.";
 
     computeTripKPIs();
+    renderInvoice(l);
   }
 
   function makeAutoLoadId(){
@@ -1612,9 +1613,20 @@ function estimateHoursAwayForLoad(l, miles){
       const c = l._computed || computeComputedForLoad(l);
       const top = `
         <div class="listTop">
-          <div><b class="linklike" data-open="${l.id}">${l.loadId || "(draft) " + l.id.slice(0,6)}</b> <span class="pill">${l.status||"—"}</span></div>
-          <div class="pill">${fmtMoney(l.rate||0)}</div>
-        </div>`;
+          <div>
+           <b class="linklike" data-open="${l.id}">
+             ${l.loadId || "(draft) " + l.id.slice(0,6)}
+          </b>
+       </div>
+
+       <div style="display:flex;gap:8px;align-items:center">
+         <div class="pill">${fmtMoney(l.rate||0)}</div>
+         <button class="btn" onclick="createInvoiceFromLoad('${l.id}')">
+           Create Invoice
+         </button>
+      </div>
+   </div>
+
       const mid = `<div class="mini">${l.shipper?.name||"—"} → ${l.consignee?.name||"—"} • Broker: ${l.broker?.name||"—"}</div>`;
       const bot = `<div class="mini">Miles: ${fmtNum(c.miles,0)} • Net: ${fmtMoney(c.net)} • O.T.R.A.F.F: ${isFinite(c.otr) ? fmtMoney(c.otr)+"/hr" : "—"}</div>`;
       return `<div class="listItem">${top}${mid}${bot}</div>`;
@@ -2123,6 +2135,31 @@ if (printBtn) {
     window.print();
   });
 }
+
+function createInvoiceFromLoad(loadId){
+  const load = loads.find(l => l.id === loadId);
+  if (!load) return alert('Load not found');
+
+  // Auto-fill invoice fields if blank
+  if (!load.invoiceDate) {
+    load.invoiceDate = new Date().toISOString().slice(0,10);
+  }
+  if (!load.invoiceNo) {
+    load.invoiceNo = 'INV-' + Date.now();
+  }
+
+  // Mark as invoiced
+  load.payStatus = 'Invoiced';
+
+
+  // Save + render
+  upsertLoad(load);
+  renderInvoice(load);
+
+
+  // Jump to Invoice tab
+  setTab('invoice');
+ }
 
   init();
 })();
