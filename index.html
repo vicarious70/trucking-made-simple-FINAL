@@ -1612,21 +1612,22 @@ function estimateHoursAwayForLoad(l, miles){
     root.innerHTML = list.map(l => {
       const c = l._computed || computeComputedForLoad(l);
       const top = `
-        <div class="listTop">
-          <div>
-           <b class="linklike" data-open="${l.id}">
-             ${l.loadId || "(draft) " + l.id.slice(0,6)}
-          </b>
-       </div>
-
-       <div style="display:flex;gap:8px;align-items:center">
-         <div class="pill">${fmtMoney(l.rate||0)}</div>
-         <button class="btn" onclick="createInvoiceFromLoad('${l.id}')">
-           Create Invoice
-         </button>
-      </div>
+      <div class="listTop">
+        <div>
+          <b class="linklike" data-open="${l.id}">
+            ${l.loadId || "(draft) " + l.id.slice(0,6)}
+      </b>
    </div>
 
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="pill">${fmtMoney(l.rate||0)}</div>
+    <button class="btn" onclick="createInvoiceFromLoad('${l.id}')">
+      Create Invoice
+    </button>
+  </div>
+</div>
+`;
+    
       const mid = `<div class="mini">${l.shipper?.name||"—"} → ${l.consignee?.name||"—"} • Broker: ${l.broker?.name||"—"}</div>`;
       const bot = `<div class="mini">Miles: ${fmtNum(c.miles,0)} • Net: ${fmtMoney(c.net)} • O.T.R.A.F.F: ${isFinite(c.otr) ? fmtMoney(c.otr)+"/hr" : "—"}</div>`;
       return `<div class="listItem">${top}${mid}${bot}</div>`;
