@@ -643,7 +643,8 @@
 
   <div class="invoice-header">
     <div>
-      <h1>Invoice #4273</h1>
+<h1>Invoice <span id="invNumber">#4273</span></h1>
+<div class="mini" style="margin-top:6px">For Load: <b id="invLoadId">—</b></div>
     </div>
     <div class="invoice-meta">
       <div><strong>Date:</strong> 01/23/2026</div>
@@ -690,33 +691,34 @@
       <tr>
         <td>4574</td>
         <td>
-          <strong>BOL:</strong> 423336<br>
-          Pickup Date: 01/22/2026<br>
-          Delivery Date: 01/23/2026<br>
+          <strong>BOL:</strong> <span id="invBOL">—</span><br>
+          Pickup Date: <span id="invPickupDate">—</span><br>
+          Delivery Date: <span id="invDeliveryDate">—</span><br>
           Weight: 46000.0<br>
           <br>
-          <strong>From:</strong><br>
-          VALLOUREC STAR<br>
-          1065 OHIO WORKS DR<br>
-          YOUNGSTOWN, OH<br><br>
+        <strong>From:</strong><br>
+        <span id="invFromBlock">—</span><br><br>
 
-          <strong>To:</strong><br>
-          WASHITA VALLEY ENTERPRISES<br>
-          230 DEEP RUN RD<br>
-          YORKVILLE, OH<br><br>
+        <strong>To:</strong><br>
+        <span id="invToBlock">—</span><br><br>
+
 
           Remittance Address: Phoenix Capital Group, PO BOX 1415, Des Moines, IA 50305
         </td>
-        <td>$600.00</td>
-        <td>$600.00</td>
+        <td id="invPrimaryFee">$—</td>
+        <td id="invSubTotal">$—</td>
       </tr>
     </tbody>
   </table>
 
-  <div class="invoice-totals">
-    <div>
-      <strong>Invoice Total
+ <div class="invoice-totals">
+  <div>
+    <strong>Invoice Total:</strong> <span id="invTotal">$—</span>
   </div>
+  <div>
+    <strong>Balance Due:</strong> <span id="invBalance">$—</span>
+  </div>
+</div>
 </section>
 <!-- END Invoice tab -->
 
@@ -1764,11 +1766,28 @@ function estimateHoursAwayForLoad(l, miles){
 
     root.innerHTML = list.map(l => {
       const c = l._computed || computeComputedForLoad(l);
-      const top = `
-        <div class="listTop">
-          <div><b class="linklike" data-open="${l.id}">${l.loadId || "(draft) " + l.id.slice(0,6)}</b> <span class="pill">${l.status||"—"}</span></div>
-          <div class="pill">${fmtMoney(l.rate||0)}</div>
-        </div>`;
+const top = `
+  <div class="listTop">
+    <div>
+      <b class="linklike" data-open="${l.id}">
+        ${l.loadId || "(draft) " + l.id.slice(0,6)}
+      </b>
+      <span class="pill">${l.status||"—"}</span>
+    </div>
+
+    <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; justify-content:flex-end">
+      <div class="pill">${fmtMoney(l.rate||0)}</div>
+
+      <button
+        class="btn primary"
+        type="button"
+        data-make-invoice="${l.id}"
+        style="padding:8px 10px; border-radius:10px; font-weight:900;"
+      >
+        Create Invoice
+      </button>
+    </div>
+  </div>`;
       const mid = `<div class="mini">${l.shipper?.name||"—"} → ${l.consignee?.name||"—"} • Broker: ${l.broker?.name||"—"}</div>`;
       const bot = `<div class="mini">Miles: ${fmtNum(c.miles,0)} • Net: ${fmtMoney(c.net)} • O.T.R.A.F.F: ${isFinite(c.otr) ? fmtMoney(c.otr)+"/hr" : "—"}</div>`;
       return `<div class="listItem">${top}${mid}${bot}</div>`;
@@ -1784,6 +1803,52 @@ function estimateHoursAwayForLoad(l, miles){
       });
     });
   }
+
+  qa("[data-make-invoice]", root).forEach(btn => {
+    btn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation(); // prevents any parent click behavior
+
+    const id = btn.getAttribute("data-make-invoice");
+    const l = loads.find(x => x.id === id);
+    if (!l) return;
+
+    // Load this item into "current load" context
+    applyLoadToForm(l);
+    $("invLoadId").textContent = l.loadId || l.id;
+    $("invNumber").textContent = "#" + (l.invoiceNo || "—");
+    $("invBOL").textContent = l.bol || l.loadId || l.id;
+
+    // Fill invoice fields
+   $("invPickupDate").textContent = l.pickupDate || "—";
+   $("invDeliveryDate").textContent = l.deliveryDate || "—";
+
+   // From / To blocks
+  const from = l.shipper || {};
+  const to = l.consignee || l.consigneeInfo || {};
+
+$("invFromBlock").innerHTML = [
+  from.name,
+  from.address,
+  [from.city, from.state].filter(Boolean).join(", ")
+].filter(Boolean).join("<br>");
+
+$("invToBlock").innerHTML = [
+  to.name,
+  to.address,
+  [to.city, to.state].filter(Boolean).join(", ")
+].filter(Boolean).join("<br>");
+
+   const rate = Number(l.rate || 0);
+   $("invPrimaryFee").textContent = fmtMoney(rate);
+   $("invSubTotal").textContent = fmtMoney(rate);
+   $("invTotal").textContent = fmtMoney(rate);
+   $("invBalance").textContent = fmtMoney(rate);
+
+    // Go to the Invoice tab
+    setTab("invoice");
+  });
+});
 
   $("btnTLNew")?.addEventListener("click", () => startNewLoad());
   $("btnTLPast")?.addEventListener("click", () => openPast());
