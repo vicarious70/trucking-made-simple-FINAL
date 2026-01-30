@@ -49,6 +49,32 @@
   font-size: 14px;
 }
 
+/* Force invoice text to be dark and readable */
+.invoice,
+.invoice * {
+  color: #000 !important;
+}
+
+/* If anything is still washed out, kill any inherited opacity/muted styling inside invoice */
+.invoice .muted,
+.invoice .mini,
+.invoice .small {
+  color: #000 !important;
+  opacity: 1 !important;
+}
+
+/* Make labels slightly bolder for clarity */
+.invoice strong {
+  color: #000 !important;
+  font-weight: 700;
+}
+
+/* Table headers darker */
+.invoice-table th {
+  color: #000 !important;
+  font-weight: 700;
+}
+
 .invoice-header {
   display: flex;
   justify-content: space-between;
