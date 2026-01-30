@@ -1858,27 +1858,42 @@ const top = `
         const delEl = $("invDeliveryDate");
         if (delEl) delEl.textContent = l.deliveryDate || "—";
 
-        // From / To blocks (if present in HTML)
-        const from = l.shipper || {};
-        const to = l.consignee || {};
+        // From / To blocks (STRICTLY from load — no defaults)
+        const from = l.shipper && Object.keys(l.shipper).length ? l.shipper : null;
+        const to = l.consignee && Object.keys(l.consignee).length ? l.consignee : null;
 
-        const fromBlock = $("invFromBlock");
-        if (fromBlock) {
-          fromBlock.innerHTML = [
-            from.name,
-            from.address,
-            [from.city, from.state].filter(Boolean).join(", ")
-          ].filter(Boolean).join("<br>");
-        }
+
+       const fromBlock = $("invFromBlock");
+       if (fromBlock) {
+        // STRICT: only show what's on the load, otherwise blank
+        const hasFrom =
+          from &&
+          (from.name || from.address || from.city || from.state);
+
+       fromBlock.innerHTML = hasFrom
+         ? [
+             from.name,
+             from.address,
+             [from.city, from.state].filter(Boolean).join(", "),
+           ].filter(Boolean).join("<br>")
+         : "";
+      }
 
         const toBlock = $("invToBlock");
         if (toBlock) {
-          toBlock.innerHTML = [
-            to.name,
-            to.address,
-            [to.city, to.state].filter(Boolean).join(", ")
-          ].filter(Boolean).join("<br>");
-        }
+          // STRICT: only show what's on the load, otherwise blank
+          const hasTo =
+            to &&
+            (to.name || to.address || to.city || to.state);
+
+        toBlock.innerHTML = hasTo
+          ? [
+              to.name,
+              to.address,
+              [to.city, to.state].filter(Boolean).join(", "),
+            ].filter(Boolean).join("<br>")
+        : "";
+      }
 
         // Money
         const rate = Number(l.rate || 0);
