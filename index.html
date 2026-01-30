@@ -38,6 +38,18 @@
   .linklike{color:#8ab7ff;text-decoration:underline;cursor:pointer}
   .mini{font-size:12px;color:#a9b4d0;margin-top:6px}
   .aliveDot{display:inline-block;margin-left:8px;width:10px;height:10px;border-radius:999px;background:#ff2f58;vertical-align:middle}
+  @media print {
+    body * { visibility: hidden; }
+    #invoicePreview, #invoicePreview * {
+      visibility: visible;
+   }
+   #invoicePreview {
+     position: absolute;
+     left: 0;
+     top: 0;
+     width: 100%;
+   }
+}
 </style>
 </head>
 <body>
@@ -65,13 +77,14 @@
     Trucking Made Simple — Blueprint + Trip/Load (MVP)
     <span id="jsAlive" class="aliveDot" title="JS alive indicator"></span>
   </h1>
-  <div class="tabs">
-    <button class="tabbtn active" data-tab="settings">Settings</button>
-    <button class="tabbtn" data-tab="blueprint">Blueprint</button>
-    <button class="tabbtn" data-tab="brokers">Brokers</button>
-    <button class="tabbtn" data-tab="tripload">Trip/Load</button>
-    <button class="tabbtn" data-tab="profiles">Directories</button>
-  </div>
+ <div class="tabs">
+   <button class="tabbtn active" data-tab="settings">Settings</button>
+   <button class="tabbtn" data-tab="blueprint">Blueprint</button>
+   <button class="tabbtn" data-tab="brokers">Brokers</button>
+   <button class="tabbtn" data-tab="tripload">Trip/Load</button>
+   <button class="tabbtn" data-tab="invoice">Invoice</button>
+   <button class="tabbtn" data-tab="profiles">Directories</button>
+ </div>
   <div class="muted" style="margin-top:8px">
     No-Touch Rule: Only <b>Settings</b> is editable system truth. Trip/Load is data entry. Blueprint/Brokers are read-only outputs. Data saves on this device (localStorage).
   </div>
@@ -532,6 +545,19 @@
   </div>
 </section>
 
+<section id="tab-invoice" class="tab" style="display:none">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+      <h2 style="margin:0">Invoice Preview</h2>
+      <button class="btn good" id="btnPrintInvoice">Print Invoice</button>
+    </div>
+
+    <div id="invoicePreview" style="background:white;color:black;margin-top:12px;padding:20px;border-radius:8px">
+      <!-- Rendered by JS -->
+    </div>
+  </div>
+</section>
+  
 <section id="tab-profiles" class="tab" style="display:none">
   <div class="grid cols2">
     <div class="card">
@@ -2032,6 +2058,71 @@ $("btnAutoSaveRemit")?.addEventListener("click", () => {
     renderMileageTotals();
     showTL("home");
   }
+
+  function renderInvoice(load){
+    if (!load) return;
+
+   const remit = load.remit || meta.lastRemit || "";
+
+   const html = `
+   <div style="font-family:Arial">
+     <h1>Invoice #${load.invoiceNo || "—"}</h1>
+     <div style="display:flex;justify-content:space-between">
+       <div>
+         <b>TO:</b><br>
+         ${load.broker?.name || ""}<br>
+         ${load.broker?.address || ""}
+       </div>
+       <div>
+         <b>FROM:</b><br>
+         ECR Trucking, LLC<br>
+         ${remit.replace(/\n/g,'<br>')}
+       </div>
+    </div>
+    
+    <hr>
+
+    <table width="100%" border="1" cellspacing="0" cellpadding="6">
+      <tr>
+        <th>Load #</th>
+        <th>Shipment Info</th>
+        <th>Primary Fee</th>
+        <th>Sub Total</th>
+      </tr>
+      <tr>
+        <td>${load.loadId || load.id}</td>
+        <td>
+          Pickup: ${load.pickupDate || ""}<br>
+          Delivery: ${load.deliveryDate || ""}<br>
+          Weight: ${load.weight || ""}<br><br>
+          <b>From:</b> ${load.shipper?.name || ""}<br>
+          ${load.shipper?.address || ""}<br><br>
+          <b>To:</b> ${load.consignee?.name || ""}<br>
+          ${load.consignee?.address || ""}<br>
+        </td>
+        <td>$${Number(load.rate||0).toFixed(2)}</td>
+        <td>$${Number(load.rate||0).toFixed(2)}</td>
+     </tr>
+   </table>
+
+   <div style="margin-top:20px;text-align:right;font-size:18px">
+     <b>Invoice Total: $${Number(load.rate||0).toFixed(2)}</b>
+   </div>
+
+   <div style="margin-top:40px;text-align:center">We appreciate your business!</div>
+ </div>
+ `;
+
+  document.getElementById("invoicePreview").innerHTML = html;
+}
+
+// Print button
+const printBtn = document.getElementById("btnPrintInvoice");
+if (printBtn) {
+  printBtn.addEventListener("click", () => {
+    window.print();
+  });
+}
 
   init();
 })();
