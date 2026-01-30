@@ -681,28 +681,16 @@
   <hr>
 
   <div class="invoice-parties">
-    <div>
-      <h3>TO:</h3>
-      <p>
-        BBI LOGISTICS<br>
-        PO BOX 979<br>
-        COLUMBUS, OH
-      </p>
-    </div>
-
-    <div>
-      <h3>FROM:</h3>
-      <p>
-        ECR Trucking, LLC<br>
-        673 Center St.<br>
-        Warren, OH 44481<br>
-        Phone: (330) 207-8282<br>
-        Fax: 330 319 7338<br>
-        MC#: 805190<br>
-        Tax ID#: 32-0363345
-      </p>
-    </div>
+   <div>
+     <h3>TO:</h3>
+     <p><span id="invToParty">—</span></p>
   </div>
+
+  <div>
+    <h3>FROM:</h3>
+    <p><span id="invFromParty">—</span></p>
+  </div>
+</div>
 
   <table class="invoice-table">
     <thead>
@@ -1894,6 +1882,12 @@ const top = `
             ].filter(Boolean).join("<br>")
         : "";
       }
+
+        const fromParty = $("invFromParty");
+        if (fromParty) fromParty.innerHTML = fromBlock ? fromBlock.innerHTML : "";
+
+        const toParty = $("invToParty");
+        if (toParty) toParty.innerHTML = toBlock ? toBlock.innerHTML : "";
 
         // Money
         const rate = Number(l.rate || 0);
