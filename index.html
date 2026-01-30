@@ -38,6 +38,100 @@
   .linklike{color:#8ab7ff;text-decoration:underline;cursor:pointer}
   .mini{font-size:12px;color:#a9b4d0;margin-top:6px}
   .aliveDot{display:inline-block;margin-left:8px;width:10px;height:10px;border-radius:999px;background:#ff2f58;vertical-align:middle}
+  /* =======================
+   Invoice Styling
+======================= */
+
+.invoice {
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 24px;
+  font-size: 14px;
+}
+
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.invoice-header h1 {
+  margin: 0;
+  font-size: 24px;
+}
+
+.invoice-meta div {
+  text-align: right;
+  margin-bottom: 4px;
+}
+
+.invoice-parties {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  margin: 20px 0;
+}
+
+.invoice-parties h3 {
+  margin-bottom: 6px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+}
+
+.invoice-table th,
+.invoice-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+  vertical-align: top;
+}
+
+.invoice-table th {
+  background: #f4f4f4;
+  text-align: left;
+}
+
+.invoice-totals {
+  margin-top: 16px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 40px;
+  font-size: 16px;
+}
+
+.invoice-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-style: italic;
+}
+  
+/* Print only the invoice (hide app UI) */
+@media print {
+  header,
+  .tabs,
+  .stickybar,
+  .btn {
+    display: none !important;
+  }
+
+  .card {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+  }
+
+  .invoice {
+    border: none;
+    padding: 0;
+  }
+
+  body {
+    background: #fff;
+  }
+}
 </style>
 </head>
 <body>
@@ -70,6 +164,7 @@
     <button class="tabbtn" data-tab="blueprint">Blueprint</button>
     <button class="tabbtn" data-tab="brokers">Brokers</button>
     <button class="tabbtn" data-tab="tripload">Trip/Load</button>
+    <button class="tabbtn" data-tab="invoice">Invoice</button>
     <button class="tabbtn" data-tab="profiles">Directories</button>
   </div>
   <div class="muted" style="margin-top:8px">
@@ -532,6 +627,99 @@
   </div>
 </section>
 
+<!-- START Invoice tab -->
+<section id="tab-invoice" class="tab" style="display:none">
+  <div class="card">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2 style="margin:0">Invoice</h2>
+  <button class="btn primary" id="btnPrintInvoice">Print Invoice</button>
+</div>
+    <div class="muted" style="margin-bottom:10px">
+      Generate/preview a professional invoice layout.
+    </div>
+
+    <!-- Invoice will render here -->
+    <div class="invoice">
+
+  <div class="invoice-header">
+    <div>
+      <h1>Invoice #4273</h1>
+    </div>
+    <div class="invoice-meta">
+      <div><strong>Date:</strong> 01/23/2026</div>
+      <div><strong>Terms:</strong> NET 10 DAYS</div>
+    </div>
+  </div>
+
+  <hr>
+
+  <div class="invoice-parties">
+    <div>
+      <h3>TO:</h3>
+      <p>
+        BBI LOGISTICS<br>
+        PO BOX 979<br>
+        COLUMBUS, OH
+      </p>
+    </div>
+
+    <div>
+      <h3>FROM:</h3>
+      <p>
+        ECR Trucking, LLC<br>
+        673 Center St.<br>
+        Warren, OH 44481<br>
+        Phone: (330) 207-8282<br>
+        Fax: 330 319 7338<br>
+        MC#: 805190<br>
+        Tax ID#: 32-0363345
+      </p>
+    </div>
+  </div>
+
+  <table class="invoice-table">
+    <thead>
+      <tr>
+        <th>Load #</th>
+        <th>Shipment Info</th>
+        <th>Primary Fee</th>
+        <th>Sub Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>4574</td>
+        <td>
+          <strong>BOL:</strong> 423336<br>
+          Pickup Date: 01/22/2026<br>
+          Delivery Date: 01/23/2026<br>
+          Weight: 46000.0<br>
+          <br>
+          <strong>From:</strong><br>
+          VALLOUREC STAR<br>
+          1065 OHIO WORKS DR<br>
+          YOUNGSTOWN, OH<br><br>
+
+          <strong>To:</strong><br>
+          WASHITA VALLEY ENTERPRISES<br>
+          230 DEEP RUN RD<br>
+          YORKVILLE, OH<br><br>
+
+          Remittance Address: Phoenix Capital Group, PO BOX 1415, Des Moines, IA 50305
+        </td>
+        <td>$600.00</td>
+        <td>$600.00</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="invoice-totals">
+    <div>
+      <strong>Invoice Total
+  </div>
+</section>
+<!-- END Invoice tab -->
+
 <section id="tab-profiles" class="tab" style="display:none">
   <div class="grid cols2">
     <div class="card">
@@ -747,9 +935,15 @@ const saveJSON = (k, v) => {
     if (name === "brokers") renderBrokerEmail();
     if (name === "tripload") updateTriploadHome();
     if (name === "profiles") renderDirectories();
+    if (name === "invoice") console.log("Invoice tab opened");
   }
 
   qa(".tabbtn").forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+  // Print invoice
+ $("btnPrintInvoice")?.addEventListener("click", () => {
+  window.print();
+});
+
 
   function numVal(id){
     const v = $(id)?.value;
