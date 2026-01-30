@@ -714,7 +714,12 @@ const saveJSON = (k, v) => {
   let settings = loadJSON(KEY.settings, null) || {...defaults};
   let dirs = loadJSON(KEY.dirs, null) || structuredClone(dirDefaults);
   let loads = loadJSON(KEY.loads, []) || [];
-  let meta = loadJSON(KEY.meta, {lastTruck:"", lastTrailer:""}) || {lastTruck:"", lastTrailer:""};
+  let meta = loadJSON(KEY.meta, {
+    lastTruck:"",
+    lastTrailer:"",
+    lastRemit:""
+  }) || {lastTruck:"", lastTrailer:"", lastRemit:""};
+
 
   const canStorage = (() => {
     try {
@@ -997,6 +1002,10 @@ Thank you.`;
 
 function autoSaveRemittance(manual = false){
   const remit = $("f_remit")?.value || "";
+  
+  // Save as global default remittance template
+  meta.lastRemit = remit;
+  saveJSON(KEY.meta, meta);
 
   // If no load yet, force draft creation
   if (!currentLoadId){
@@ -1425,6 +1434,11 @@ function renderMileageTotals(){
       deadhead:0, loaded:0, misc:0,
       useLastEq: true
     });
+
+    // Auto-fill remittance from global template
+    if ($("f_remit")) {
+      $("f_remit").value = meta.lastRemit || "";
+    }
 
     if (meta.lastTruck || meta.lastTrailer){
       if ($("f_useLastEq").value === "true"){
