@@ -708,7 +708,7 @@
           <strong>BOL:</strong> <span id="invBOL">—</span><br>
           Pickup Date: <span id="invPickupDate">—</span><br>
           Delivery Date: <span id="invDeliveryDate">—</span><br>
-          Weight: 46000.0<br>
+          Weight: <span id="invWeight">—</span><br>
           <br>
         <strong>From:</strong><br>
         <span id="invFromBlock">—</span><br><br>
@@ -1855,6 +1855,9 @@ const top = `
 
         const delEl = $("invDeliveryDate");
         if (delEl) delEl.textContent = l.deliveryDate || "—";
+
+        const weightEl = $("invWeight");
+        if (weightEl) weightEl.textContent = (l.weight ?? "—");
 
         // From / To blocks (STRICTLY from load — no defaults)
         const from = l.shipper && Object.keys(l.shipper).length ? l.shipper : null;
