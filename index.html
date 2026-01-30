@@ -1,0 +1,1517 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Trucking Made Simple — Blueprint + Trip/Load (MVP) <span id="jsAlive" style="display:inline-block;margin-left:8px;width:10px;height:10px;border-radius:999px;background:#ff2f58;vertical-align:middle"></span></title>
+<style>
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:#0b1020;color:#eef2ff}
+  header{position:sticky;top:0;background:#070a14;border-bottom:1px solid #22305e;z-index:5}
+  .wrap{max-width:1050px;margin:0 auto;padding:14px}
+  h1{font-size:18px;margin:0 0 10px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .tabbtn{border:1px solid #22305e;background:#121a33;color:#eef2ff;padding:10px 12px;border-radius:12px;font-weight:800;cursor:pointer}
+  .tabbtn.active{border-color:#4aa3ff}
+  .card{background:#121a33;border:1px solid #22305e;border-radius:16px;padding:12px;margin-top:12px}
+  label{display:block;font-size:12px;color:#a9b4d0;margin:10px 0 6px}
+  input,select,textarea{width:100%;padding:10px;border-radius:12px;border:1px solid #22305e;background:#0e1530;color:#eef2ff;box-sizing:border-box}
+  textarea{min-height:120px}
+  .grid{display:grid;gap:12px}
+  @media(min-width:900px){.grid.cols2{grid-template-columns:1fr 1fr}}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .btn{border:1px solid #22305e;background:#1a2550;color:#eef2ff;padding:10px 12px;border-radius:12px;font-weight:900;cursor:pointer}
+  .btn.primary{background:#1f5bff;border-color:#2b6cff}
+  .btn.good{background:#19b56f;border-color:#1ba86a}
+  .btn.bad{background:#ff2f58;border-color:#ff2f58}
+  .muted{color:#a9b4d0;font-size:13px}
+  .kpi{display:flex;justify-content:space-between;gap:10px;padding:10px;border:1px solid #22305e;border-radius:14px;background:#0c1230;margin-top:8px}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:12px;white-space:pre-wrap}
+  .pill{display:inline-block;padding:4px 10px;border-radius:999px;border:1px solid #22305e;background:#0c1230;font-size:12px;color:#a9b4d0}
+  .stickybar{position:sticky;top:68px;z-index:4;background:#0b1020;padding:10px 0}
+  .hdrbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .danger{border-color:#ff2f58 !important; box-shadow:0 0 0 2px rgba(255,47,88,.18) inset}
+  details{border:1px solid #22305e;border-radius:14px;background:#0c1230;padding:10px;margin-top:10px}
+  summary{cursor:pointer;font-weight:900}
+  .small{font-size:12px;color:#a9b4d0}
+  .listItem{padding:10px;border:1px solid #22305e;border-radius:14px;background:#0c1230;margin-top:10px}
+  .listTop{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+  .linklike{color:#8ab7ff;text-decoration:underline;cursor:pointer}
+  .mini{font-size:12px;color:#a9b4d0;margin-top:6px}
+</style>
+</head>
+<body>
+<div id="protocolGuard" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:9999;padding:16px;overflow:auto">
+  <div style="max-width:920px;margin:40px auto;background:#121a33;border:2px solid #ff2f58;border-radius:18px;padding:14px;color:#eef2ff">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap">
+      <div style="font-weight:900;font-size:16px">Buttons / Save may be blocked in this viewer</div>
+      <button id="guardClose" style="border:1px solid #22305e;background:#0c1230;color:#eef2ff;padding:10px 12px;border-radius:12px;font-weight:900;cursor:pointer">
+        I Understand
+      </button>
+    </div>
+    <div style="color:#a9b4d0;margin-top:10px;line-height:1.35">
+      If you opened this app using <b>Files</b> / <b>Google Drive Preview</b> (file://), Android may block JavaScript or localStorage.
+      <br><br>
+      <b>Fix:</b> open from <b>GitHub Pages (https)</b> in Chrome, or use a localhost server app.
+      <br><br>
+      <b>JS dot:</b> the little dot beside the title turns <b style="color:#19b56f">green</b> when JavaScript is running.
+    </div>
+  </div>
+</div>
+
+<header><div class="wrap">
+  <h1>Trucking Made Simple — Blueprint + Trip/Load (MVP)</h1>
+  <div class="tabs">
+    <button class="tabbtn active" data-tab="settings">Settings</button>
+    <button class="tabbtn" data-tab="blueprint">Blueprint</button>
+    <button class="tabbtn" data-tab="brokers">Brokers</button>
+    <button class="tabbtn" data-tab="tripload">Trip/Load</button>
+    <button class="tabbtn" data-tab="profiles">Directories</button>
+  </div>
+  <div class="muted" style="margin-top:8px">
+    No‑Touch Rule: Only <b>Settings</b> is editable system truth. Trip/Load is data entry. Blueprint/Brokers are read‑only outputs. Data saves on this device (localStorage).
+  </div>
+</div></header>
+
+<main class="wrap">
+
+<section id="tab-settings" class="tab">
+  <div class="grid cols2">
+    <div class="card">
+      <h2 style="margin:0 0 8px">Mode</h2>
+      <label>Fleet Mode (include payroll)</label>
+      <select id="fleetMode">
+        <option value="false">OFF (Owner‑Operator)</option>
+        <option value="true">ON (Fleet Mode)</option>
+      </select>
+      <label>Company driver wage per week (only used when Fleet Mode ON)</label>
+      <input id="driverWageWeekly" type="number" step="0.01"/>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px">Fuel + Time Away</h2>
+      <div class="row">
+        <div><label>Fuel $/gal</label><input id="fuelPrice" type="number" step="0.001"/></div>
+        <div><label>Truck MPG (default)</label><input id="truckMpg" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Hours away per load (default)</label><input id="hoursPerLoad" type="number" step="0.25"/></div>
+        <div><label>Days away per load (auto‑sync)</label><input id="daysPerLoad" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Avg miles/load (OTR)</label><input id="avgMilesLoadOtr" type="number" step="1"/></div>
+        <div><label>Avg miles/load (Local)</label><input id="avgMilesLoadLocal" type="number" step="1"/></div>
+      </div>
+      <div class="muted" style="margin-top:8px"><b>O.T.R.A.F.F</b> locked: <b>net revenue ÷ hours away from family</b>.</div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px">Household (Monthly)</h2>
+      <div class="row">
+        <div><label>House payment</label><input id="hh_house" type="number" step="0.01"/></div>
+        <div><label>Utilities</label><input id="hh_util" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Car payment</label><input id="hh_car" type="number" step="0.01"/></div>
+        <div><label>Groceries</label><input id="hh_groc" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Car gas (monthly)</label><input id="hh_carGas" type="number" step="0.01"/></div>
+        <div><label>Household gas utilities</label><input id="hh_gasUtil" type="number" step="0.01"/></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 8px">Business (Monthly)</h2>
+      <div class="row">
+        <div><label>Truck payment</label><input id="biz_truck" type="number" step="0.01"/></div>
+        <div><label>Trailer payment</label><input id="biz_trailer" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Insurance</label><input id="biz_ins" type="number" step="0.01"/></div>
+        <div><label>Business phone</label><input id="biz_phone" type="number" step="0.01"/></div>
+      </div>
+      <div class="row">
+        <div><label>Parking</label><input id="biz_park" type="number" step="0.01"/></div>
+        <div><label>ELD</label><input id="biz_eld" type="number" step="0.01"/></div>
+      </div>
+      <label>Load board</label><input id="biz_lb" type="number" step="0.01"/>
+      <div class="muted" style="margin-top:8px">Payroll is handled in Mode (Fleet Mode).</div>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <h2 style="margin:0 0 8px">Percent Rules (of Gross) + Annual Caps</h2>
+      <div class="muted">Caps are annual; monthly scenario uses cap/12. “Continue after cap” overrides cap.</div>
+
+      <div class="row">
+        <div><label>Factoring % (no cap)</label><input id="pct_factoring" type="number" step="0.001"/></div>
+        <div><label>Tax reserve % (no cap)</label><input id="pct_tax" type="number" step="0.001"/></div>
+      </div>
+
+      <div class="grid cols2">
+        <div>
+          <label>Plates %</label><input id="pct_plates" type="number" step="0.001"/>
+          <label>Plates cap (annual $)</label><input id="cap_plates" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_plates"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+        <div>
+          <label>IFTA %</label><input id="pct_ifta" type="number" step="0.001"/>
+          <label>IFTA cap (annual $)</label><input id="cap_ifta" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_ifta"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+        <div>
+          <label>Maintenance %</label><input id="pct_maint" type="number" step="0.001"/>
+          <label>Maintenance cap (annual $)</label><input id="cap_maint" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_maint"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+        <div>
+          <label>Heavy highway %</label><input id="pct_hwy" type="number" step="0.001"/>
+          <label>Heavy highway cap (annual $)</label><input id="cap_hwy" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_hwy"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+        <div>
+          <label>Tires %</label><input id="pct_tires" type="number" step="0.001"/>
+          <label>Tires cap (annual $)</label><input id="cap_tires" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_tires"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+        <div>
+          <label>USDOT %</label><input id="pct_usdot" type="number" step="0.001"/>
+          <label>USDOT cap (annual $)</label><input id="cap_usdot" type="number" step="0.01"/>
+          <label>Continue after cap?</label><select id="aftercap_usdot"><option value="false">OFF</option><option value="true">ON</option></select>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <div><label>OTR miles per month</label><input id="m_otr" type="number" step="1"/></div>
+        <div><label>Local miles per month</label><input id="m_local" type="number" step="1"/></div>
+      </div>
+      <div class="row">
+        <div><label>OTR miles per year</label><input id="y_otr" type="number" step="1"/></div>
+        <div><label>Local miles per year</label><input id="y_local" type="number" step="1"/></div>
+      </div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn primary" id="btnResetDefaults">Reset to Defaults</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-blueprint" class="tab" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 6px">Blueprint (Read‑Only)</h2>
+    <div class="muted">Minimum sustainable rate per mile for each scenario + O.T.R.A.F.F from saved delivered loads.</div>
+    <div id="blueprintOut"></div>
+  </div>
+</section>
+
+<section id="tab-brokers" class="tab" style="display:none">
+  <div class="card">
+    <h2 style="margin:0 0 6px">Brokers (Copy/Paste Email)</h2>
+    <div class="row">
+      <div>
+        <label>Scenario</label>
+        <select id="brokerScenario">
+          <option value="OTR_MONTH">OTR (Monthly)</option>
+          <option value="LOCAL_MONTH">Local (Monthly)</option>
+          <option value="OTR_YEAR">OTR (Yearly)</option>
+          <option value="LOCAL_YEAR">Local (Yearly)</option>
+        </select>
+      </div>
+      <div style="align-self:end">
+        <button class="btn good" id="btnCopyBroker">Copy Email Text</button>
+      </div>
+    </div>
+    <label>Email block</label>
+    <textarea id="brokerText" readonly></textarea>
+    <div class="muted">Best on phones: host on GitHub Pages (https). Android file viewers can block buttons.</div>
+  </div>
+</section>
+
+<section id="tab-tripload" class="tab" style="display:none">
+  <div class="stickybar">
+    <div class="hdrbar">
+      <span class="pill" id="tlMode">Trip/Load Home</span>
+      <button class="btn primary" id="btnTLNew">Create New Load</button>
+      <button class="btn" id="btnTLPast">View Past Loads</button>
+      <button class="btn" id="btnTLBack" style="display:none">← Back</button>
+    </div>
+  </div>
+
+  <div id="triploadHome" class="card">
+    <h2 style="margin:0 0 6px">Trip/Load</h2>
+    <div class="muted">One‑page form spec (MVP). Save Draft allows incomplete. Save & Close enforces minimum fields.</div>
+    <div class="kpi"><b>Loads saved on this device</b><div id="tlCount">0</div></div>
+    <div class="kpi"><b>Last used equipment</b><div id="tlLastEq">—</div></div>
+    <div class="muted" style="margin-top:8px">Tip: After delivery, update status to <b>Delivered</b> and enter actual miles/gallons/hours for accurate O.T.R.A.F.F.</div>
+  </div>
+
+  <div id="triploadFormWrap" style="display:none">
+    <div class="card">
+      <div class="hdrbar" style="justify-content:space-between">
+        <div>
+          <div style="font-weight:900;font-size:16px" id="tlTitle">Create Load</div>
+          <div class="small" id="tlSub">Save Draft anytime.</div>
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn" id="btnTLPrevDup">Duplicate Previous Load</button>
+          <button class="btn" id="btnTLSaveDraft">Save Draft</button>
+          <button class="btn good" id="btnTLSaveClose">Save & Close</button>
+        </div>
+      </div>
+
+      <details open>
+        <summary>Load Identification</summary>
+        <div class="row">
+          <div>
+            <label>Load # / Trip ID</label>
+            <input id="f_loadId" placeholder="Auto if blank on Save & Close"/>
+          </div>
+          <div>
+            <label>Status</label>
+            <select id="f_status">
+              <option>Planned</option>
+              <option>In Transit</option>
+              <option>Delivered</option>
+              <option>Paid</option>
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div><label>Pickup Date</label><input id="f_pickupDate" type="date"/></div>
+          <div><label>Delivery Date</label><input id="f_deliveryDate" type="date"/></div>
+        </div>
+        <label>Notes</label><textarea id="f_notes" placeholder="gate codes, lumper, special instructions..."></textarea>
+      </details>
+
+      <details>
+        <summary>Shipper (Saved + Dropdown)</summary>
+        <div class="row">
+          <div>
+            <label>Shipper Name</label>
+            <input id="f_shipper_name" list="dl_shippers" placeholder="Type 2–3 chars to match"/>
+            <label class="mini" style="margin-top:6px">Saved Shippers</label>
+            <select id="sel_shippers" style="width:100%"></select>
+            <datalist id="dl_shippers"></datalist>
+          </div>
+          <div style="align-self:end"><button class="btn good" id="btnSaveShipper">Save Shipper</button></div>
+        </div>
+        <label>Pickup Address</label><input id="f_shipper_address"/>
+        <div class="row">
+          <div><label>City</label><input id="f_shipper_city"/></div>
+          <div><label>State</label><input id="f_shipper_state"/></div>
+        </div>
+        <div class="row">
+          <div><label>ZIP</label><input id="f_shipper_zip"/></div>
+          <div><label>Contact Name</label><input id="f_shipper_contact"/></div>
+        </div>
+        <div class="row">
+          <div><label>Phone</label><input id="f_shipper_phone"/></div>
+          <div><label>Email</label><input id="f_shipper_email"/></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Consignee (Saved + Dropdown)</summary>
+        <div class="row">
+          <div>
+            <label>Consignee Name</label>
+            <input id="f_consignee_name" list="dl_consignees" placeholder="Type 2–3 chars to match"/>
+            <label class="mini" style="margin-top:6px">Saved Consignees</label>
+            <select id="sel_consignees" style="width:100%"></select>
+            <datalist id="dl_consignees"></datalist>
+          </div>
+          <div style="align-self:end"><button class="btn good" id="btnSaveConsignee">Save Consignee</button></div>
+        </div>
+        <label>Delivery Address</label><input id="f_consignee_address"/>
+        <div class="row">
+          <div><label>City</label><input id="f_consignee_city"/></div>
+          <div><label>State</label><input id="f_consignee_state"/></div>
+        </div>
+        <div class="row">
+          <div><label>ZIP</label><input id="f_consignee_zip"/></div>
+          <div><label>Contact Name</label><input id="f_consignee_contact"/></div>
+        </div>
+        <div class="row">
+          <div><label>Phone</label><input id="f_consignee_phone"/></div>
+          <div><label>Email</label><input id="f_consignee_email"/></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Broker (Saved + Dropdown)</summary>
+        <div class="row">
+          <div>
+            <label>Broker Name</label>
+            <input id="f_broker_name" list="dl_brokers" placeholder="Type 2–3 chars to match"/>
+            <label class="mini" style="margin-top:6px">Saved Brokers</label>
+            <select id="sel_brokers" style="width:100%"></select>
+            <datalist id="dl_brokers"></datalist>
+          </div>
+          <div style="align-self:end"><button class="btn good" id="btnSaveBroker">Save Broker</button></div>
+        </div>
+        <label>Broker Address</label><input id="f_broker_address"/>
+        <div class="row">
+          <div><label>Contact Name</label><input id="f_broker_contact"/></div>
+          <div><label>Phone</label><input id="f_broker_phone"/></div>
+        </div>
+        <div class="row">
+          <div><label>Email</label><input id="f_broker_email"/></div>
+          <div><label>MC Number</label><input id="f_broker_mc"/></div>
+        </div>
+      </details>
+
+      <details>
+        <summary>Equipment</summary>
+        <div class="row">
+          <div><label>Truck #</label><input id="f_truck" placeholder="Truck 1"/></div>
+          <div><label>Trailer #</label><input id="f_trailer" placeholder="Trailer 1"/></div>
+        </div>
+        <label>Use last used equipment?</label>
+        <select id="f_useLastEq">
+          <option value="true">ON</option>
+          <option value="false">OFF</option>
+        </select>
+        <div class="small">If ON, Truck/Trailer will auto‑fill from last saved load when creating a new load.</div>
+      </details>
+
+      <details>
+        <summary>Load Details + Rate</summary>
+        <label>Commodity / Description</label><input id="f_commodity"/>
+        <div class="row">
+          <div><label>Weight (lbs)</label><input id="f_weight" type="number" step="1"/></div>
+          <div><label>Pallet count (optional)</label><input id="f_pallets" type="number" step="1"/></div>
+        </div>
+        <label>Temperature / Special Handling (optional)</label><input id="f_temp"/>
+        <div class="row">
+          <div><label>Load Rate ($)</label><input id="f_rate" type="number" step="0.01"/></div>
+          <div><label>Status (Payment)</label>
+            <select id="f_payStatus">
+              <option>Uninvoiced</option>
+              <option>Invoiced</option>
+              <option>Paid</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div><label>Deadhead miles</label><input id="f_deadhead" type="number" step="1"/></div>
+          <div><label>Loaded miles</label><input id="f_loaded" type="number" step="1"/></div>
+        </div>
+        <div class="row">
+          <div><label>Gallons used</label><input id="f_gallons" type="number" step="0.01"/></div>
+          <div><label>Hours away (this load)</label><input id="f_hoursAway" type="number" step="0.25"/></div>
+        </div>
+        <div class="row">
+          <div><label>Tolls/misc ($)</label><input id="f_misc" type="number" step="0.01"/></div>
+          <div><label>Auto MPG (this load)</label><input id="f_mpg" readonly/></div>
+        </div>
+
+        <div class="kpi"><b>Projected Net (this load)</b><div id="k_net">—</div></div>
+        <div class="kpi"><b>Projected O.T.R.A.F.F</b><div id="k_otraff">—</div></div>
+        <div class="small">These use Settings fuel + reserve rules. If gallons/hours are blank, defaults are used.</div>
+      </details>
+
+      <details>
+        <summary>Invoicing & Payment Tracking</summary>
+        <label>Remittance Info (prints on invoice)</label><textarea id="f_remit"></textarea>
+        <div class="row">
+          <div><label>Days to Pay</label><input id="f_netTerms" placeholder="Net 30"/></div>
+          <div><label>Invoice Number</label><input id="f_invoiceNo"/></div>
+        </div>
+        <div class="row">
+          <div><label>Invoice Date</label><input id="f_invoiceDate" type="date"/></div>
+          <div><label>Paid Date</label><input id="f_paidDate" type="date"/></div>
+        </div>
+        <label>Payment Method</label>
+        <select id="f_payMethod">
+          <option value="">—</option>
+          <option>ACH</option>
+          <option>Check</option>
+          <option>Wire</option>
+          <option>Cash</option>
+          <option>Other</option>
+        </select>
+        <label>Attachments (placeholder – filenames only in this MVP)</label>
+        <div class="row">
+          <div><input id="f_attach_ratecon" type="file" accept="image/*,.pdf"/></div>
+          <div><input id="f_attach_bol" type="file" accept="image/*,.pdf"/></div>
+        </div>
+        <div class="small">Note: browsers don’t allow saving files into localStorage safely. This MVP saves filenames only.</div>
+      </details>
+
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin:0 0 6px">Validation Messages</h3>
+        <div id="tlMsg" class="muted">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="triploadPastWrap" style="display:none">
+    <div class="card">
+      <h2 style="margin:0 0 6px">Past Loads</h2>
+      <div class="row">
+        <div><label>Search (Load # / Broker / Shipper / Consignee)</label><input id="pastSearch" placeholder="Search..."/></div>
+        <div><label>Status filter</label>
+          <select id="pastStatus">
+            <option value="">All</option>
+            <option>Planned</option>
+            <option>In Transit</option>
+            <option>Delivered</option>
+            <option>Paid</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div><label>Date from</label><input id="pastFrom" type="date"/></div>
+        <div><label>Date to</label><input id="pastTo" type="date"/></div>
+      </div>
+      <div class="muted">Tap a load to edit. Duplicate clears invoice/payment fields.</div>
+      <div id="pastList"></div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-profiles" class="tab" style="display:none">
+  <div class="grid cols2">
+    <div class="card">
+      <h2 style="margin:0 0 6px">Shippers Directory</h2>
+      <label>Search as you type</label><input id="shipperSearch" placeholder="name, city, phone..."/>
+      <select id="shipperPick" size="6" style="margin-top:10px"></select>
+      <div class="row">
+        <div><label>Name</label><input id="shipper_name"/></div>
+        <div><label>Phone</label><input id="shipper_phone"/></div>
+      </div>
+      <div class="row">
+        <div><label>City</label><input id="shipper_city"/></div>
+        <div><label>State</label><input id="shipper_state"/></div>
+      </div>
+      <label>Address</label><input id="shipper_address"/>
+      <div class="row">
+        <div><label>Zip</label><input id="shipper_zip"/></div>
+        <div><label>Email</label><input id="shipper_email"/></div>
+      </div>
+      <label>Contact</label><input id="shipper_contact"/>
+      <label>Notes</label><input id="shipper_notes"/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn good" id="btnDirSaveShipper">Save/Update</button>
+        <button class="btn bad" id="btnDirDeleteShipper">Delete</button>
+        <button class="btn" id="btnDirClearShippers">Clear All</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin:0 0 6px">Consignees Directory</h2>
+      <label>Search as you type</label><input id="consigneeSearch" placeholder="name, city, phone..."/>
+      <select id="consigneePick" size="6" style="margin-top:10px"></select>
+      <div class="row">
+        <div><label>Name</label><input id="consignee_name"/></div>
+        <div><label>Phone</label><input id="consignee_phone"/></div>
+      </div>
+      <div class="row">
+        <div><label>City</label><input id="consignee_city"/></div>
+        <div><label>State</label><input id="consignee_state"/></div>
+      </div>
+      <label>Address</label><input id="consignee_address"/>
+      <div class="row">
+        <div><label>Zip</label><input id="consignee_zip"/></div>
+        <div><label>Email</label><input id="consignee_email"/></div>
+      </div>
+      <label>Contact</label><input id="consignee_contact"/>
+      <label>Notes</label><input id="consignee_notes"/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn good" id="btnDirSaveConsignee">Save/Update</button>
+        <button class="btn bad" id="btnDirDeleteConsignee">Delete</button>
+        <button class="btn" id="btnDirClearConsignees">Clear All</button>
+      </div>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <h2 style="margin:0 0 6px">Brokers Directory</h2>
+      <label>Search as you type</label><input id="brokerSearch" placeholder="name, MC, phone..."/>
+      <select id="brokerPick" size="6" style="margin-top:10px"></select>
+      <div class="row">
+        <div><label>Name</label><input id="broker_name"/></div>
+        <div><label>MC Number</label><input id="broker_mc"/></div>
+      </div>
+      <label>Address</label><input id="broker_address"/>
+      <div class="row">
+        <div><label>Contact</label><input id="broker_contact"/></div>
+        <div><label>Phone</label><input id="broker_phone"/></div>
+      </div>
+      <label>Email</label><input id="broker_email"/>
+      <label>Notes</label><input id="broker_notes"/>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn good" id="btnDirSaveBroker">Save/Update</button>
+        <button class="btn bad" id="btnDirDeleteBroker">Delete</button>
+        <button class="btn" id="btnDirClearBrokers">Clear All</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+const KEY_SETTINGS="tms_settings_v2";
+const KEY_LOADS="tms_loads_v1";
+const KEY_LAST_EQ="tms_last_equipment_v1";
+const KEY_SHIPPERS="tms_shippers_v2";
+const KEY_CONSIGNEES="tms_consignees_v2";
+const KEY_BROKERS="tms_brokers_v1";
+
+function storageOK(){
+  try{
+    const k="__tms_test__";
+    localStorage.setItem(k,"1");
+    localStorage.removeItem(k);
+    return true;
+  }catch(e){ return false; }
+}
+window.__TMS_STORAGE_OK__ = storageOK();
+if(!window.__TMS_STORAGE_OK__){
+  // show a visible warning in the UI if possible
+  window.addEventListener("DOMContentLoaded", ()=>{
+    const w=document.createElement("div");
+    w.style.cssText="background:#2a1220;border:2px solid #ff2f58;color:#eef2ff;border-radius:14px;padding:10px;margin:12px 0;font-weight:800";
+    w.textContent="⚠️ Storage is blocked in this viewer. Saving (shippers/loads/settings) will not work. Open via GitHub Pages (https) or localhost.";
+    const main=document.querySelector("main");
+    if(main) main.prepend(w);
+  });
+}
+
+
+const $=id=>document.getElementById(id);
+const num=v=>Number(v||0);
+const money=n=>Number(n||0).toLocaleString(undefined,{style:"currency",currency:"USD"});
+function loadJSON(key, fallback){try{const r=localStorage.getItem(key);return r?JSON.parse(r):fallback}catch{return fallback}}
+function saveJSON(key, obj){
+  try{
+    localStorage.setItem(key, JSON.stringify(obj));
+    return true;
+  }catch(e){
+    console.warn("localStorage blocked", e);
+    alert("Storage is blocked in this viewer/browser (common on Android file previews). Use GitHub Pages (https) or a localhost server app so Save works.");
+    return false;
+  }
+}
+function uuid(){ return "id-"+Math.random().toString(16).slice(2)+"-"+Date.now().toString(16); }
+function todayISO(){ return new Date().toISOString().slice(0,10); }
+
+document.querySelectorAll(".tabbtn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    document.querySelectorAll(".tabbtn").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    document.querySelectorAll("section.tab").forEach(s=>s.style.display="none");
+    $("tab-"+btn.dataset.tab).style.display="block";
+    refreshAll();
+  });
+});
+
+const DEFAULTS={
+  fleetMode:false, driverWageWeekly:1000,
+  fuelPrice:3.659, truckMpg:4.60,
+  hoursPerLoad:48, daysPerLoad:2,
+  avgMilesLoadOtr:600, avgMilesLoadLocal:250,
+  household:{house:1500, util:500, car:500, groc:700, carGas:0, gasUtil:400},
+  business:{truck:1500, trailer:1100, ins:1500, phone:150, park:300, eld:25, lb:169},
+  pct:{factoring:0.02, tax:0.28, plates:0.05, ifta:0.05, maint:0.07, hwy:0.02, tires:0.05, usdot:0.02},
+  cap:{plates:2500, ifta:2500, maint:5000, hwy:550, tires:5000, usdot:150},
+  afterCap:{plates:false, ifta:false, maint:false, hwy:false, tires:false, usdot:false},
+  miles:{otrMonth:12500, localMonth:6000, otrYear:144000, localYear:72000}
+};
+
+function getSettings(){
+  const s={
+    fleetMode: $("fleetMode").value==="true",
+    driverWageWeekly: num($("driverWageWeekly").value),
+    fuelPrice: num($("fuelPrice").value),
+    truckMpg: num($("truckMpg").value) || DEFAULTS.truckMpg,
+    hoursPerLoad: num($("hoursPerLoad").value),
+    daysPerLoad: num($("daysPerLoad").value),
+    avgMilesLoadOtr: num($("avgMilesLoadOtr").value),
+    avgMilesLoadLocal: num($("avgMilesLoadLocal").value),
+    household:{
+      house:num($("hh_house").value), util:num($("hh_util").value), car:num($("hh_car").value),
+      groc:num($("hh_groc").value), carGas:num($("hh_carGas").value), gasUtil:num($("hh_gasUtil").value)
+    },
+    business:{
+      truck:num($("biz_truck").value), trailer:num($("biz_trailer").value), ins:num($("biz_ins").value),
+      phone:num($("biz_phone").value), park:num($("biz_park").value), eld:num($("biz_eld").value), lb:num($("biz_lb").value)
+    },
+    pct:{
+      factoring:num($("pct_factoring").value), tax:num($("pct_tax").value),
+      plates:num($("pct_plates").value), ifta:num($("pct_ifta").value), maint:num($("pct_maint").value),
+      hwy:num($("pct_hwy").value), tires:num($("pct_tires").value), usdot:num($("pct_usdot").value)
+    },
+    cap:{
+      plates:num($("cap_plates").value), ifta:num($("cap_ifta").value), maint:num($("cap_maint").value),
+      hwy:num($("cap_hwy").value), tires:num($("cap_tires").value), usdot:num($("cap_usdot").value)
+    },
+    afterCap:{
+      plates:$("aftercap_plates").value==="true", ifta:$("aftercap_ifta").value==="true",
+      maint:$("aftercap_maint").value==="true", hwy:$("aftercap_hwy").value==="true",
+      tires:$("aftercap_tires").value==="true", usdot:$("aftercap_usdot").value==="true"
+    },
+    miles:{
+      otrMonth:num($("m_otr").value), localMonth:num($("m_local").value),
+      otrYear:num($("y_otr").value), localYear:num($("y_local").value)
+    }
+  };
+  if(s.hoursPerLoad>0) s.daysPerLoad = s.hoursPerLoad/24;
+  if(s.daysPerLoad>0 && s.hoursPerLoad<=0) s.hoursPerLoad = s.daysPerLoad*24;
+  return s;
+}
+function setSettings(s){
+  $("fleetMode").value=String(!!s.fleetMode);
+  $("driverWageWeekly").value=s.driverWageWeekly;
+  $("fuelPrice").value=s.fuelPrice;
+  $("truckMpg").value=s.truckMpg;
+  $("hoursPerLoad").value=s.hoursPerLoad;
+  $("daysPerLoad").value=s.daysPerLoad;
+  $("avgMilesLoadOtr").value=s.avgMilesLoadOtr;
+  $("avgMilesLoadLocal").value=s.avgMilesLoadLocal;
+
+  $("hh_house").value=s.household.house; $("hh_util").value=s.household.util;
+  $("hh_car").value=s.household.car; $("hh_groc").value=s.household.groc;
+  $("hh_carGas").value=s.household.carGas; $("hh_gasUtil").value=s.household.gasUtil;
+
+  $("biz_truck").value=s.business.truck; $("biz_trailer").value=s.business.trailer;
+  $("biz_ins").value=s.business.ins; $("biz_phone").value=s.business.phone;
+  $("biz_park").value=s.business.park; $("biz_eld").value=s.business.eld; $("biz_lb").value=s.business.lb;
+
+  $("pct_factoring").value=s.pct.factoring; $("pct_tax").value=s.pct.tax;
+  $("pct_plates").value=s.pct.plates; $("cap_plates").value=s.cap.plates; $("aftercap_plates").value=String(!!s.afterCap.plates);
+  $("pct_ifta").value=s.pct.ifta; $("cap_ifta").value=s.cap.ifta; $("aftercap_ifta").value=String(!!s.afterCap.ifta);
+  $("pct_maint").value=s.pct.maint; $("cap_maint").value=s.cap.maint; $("aftercap_maint").value=String(!!s.afterCap.maint);
+  $("pct_hwy").value=s.pct.hwy; $("cap_hwy").value=s.cap.hwy; $("aftercap_hwy").value=String(!!s.afterCap.hwy);
+  $("pct_tires").value=s.pct.tires; $("cap_tires").value=s.cap.tires; $("aftercap_tires").value=String(!!s.afterCap.tires);
+  $("pct_usdot").value=s.pct.usdot; $("cap_usdot").value=s.cap.usdot; $("aftercap_usdot").value=String(!!s.afterCap.usdot);
+
+  $("m_otr").value=s.miles.otrMonth; $("m_local").value=s.miles.localMonth;
+  $("y_otr").value=s.miles.otrYear; $("y_local").value=s.miles.localYear;
+}
+function persistSettings(){ saveJSON(KEY_SETTINGS, getSettings()); refreshAll(); }
+
+[
+  "fleetMode","driverWageWeekly","fuelPrice","truckMpg","hoursPerLoad","daysPerLoad","avgMilesLoadOtr","avgMilesLoadLocal",
+  "hh_house","hh_util","hh_car","hh_groc","hh_carGas","hh_gasUtil",
+  "biz_truck","biz_trailer","biz_ins","biz_phone","biz_park","biz_eld","biz_lb",
+  "pct_factoring","pct_tax","pct_plates","cap_plates","aftercap_plates",
+  "pct_ifta","cap_ifta","aftercap_ifta",
+  "pct_maint","cap_maint","aftercap_maint",
+  "pct_hwy","cap_hwy","aftercap_hwy",
+  "pct_tires","cap_tires","aftercap_tires",
+  "pct_usdot","cap_usdot","aftercap_usdot",
+  "m_otr","m_local","y_otr","y_local"
+].forEach(id=>{ $(id).addEventListener("input",persistSettings); $(id).addEventListener("change",persistSettings); });
+
+$("hoursPerLoad").addEventListener("input",()=>{ $("daysPerLoad").value=(num($("hoursPerLoad").value)/24).toFixed(2); });
+$("daysPerLoad").addEventListener("input",()=>{ $("hoursPerLoad").value=(num($("daysPerLoad").value)*24).toFixed(2); });
+$("btnResetDefaults").addEventListener("click",()=>{ setSettings(structuredClone(DEFAULTS)); persistSettings(); });
+
+function monthlyTotals(s){
+  const hh=Object.values(s.household).reduce((a,b)=>a+num(b),0);
+  let biz=Object.values(s.business).reduce((a,b)=>a+num(b),0);
+  if(s.fleetMode) biz += num(s.driverWageWeekly)*52/12;
+  return {hh,biz};
+}
+function fuelCostForMiles(s,miles,mpgOverride){
+  const mpg = Math.max(0.01, mpgOverride || s.truckMpg);
+  return (miles/mpg)*s.fuelPrice;
+}
+function capForPeriod(annualCap, period){ return period==="year"?annualCap:annualCap/12; }
+function cappedAmt(gross,p,capAnnual,period,after){ const raw=gross*p; const cap=capForPeriod(capAnnual,period); return after?raw:Math.min(raw,cap); }
+
+function solveGrossRequired(s,miles,period){
+  const {hh,biz}=monthlyTotals(s);
+  const fixed=(period==="year")?(hh+biz)*12:(hh+biz);
+  const fuel=fuelCostForMiles(s,miles);
+
+  let gross=(fixed+fuel)/Math.max(0.01,(1-(s.pct.factoring+s.pct.tax+s.pct.plates+s.pct.ifta+s.pct.maint+s.pct.hwy+s.pct.tires+s.pct.usdot)));
+  for(let i=0;i<60;i++){
+    const factoring=gross*s.pct.factoring;
+    const tax=gross*s.pct.tax;
+    const plates=cappedAmt(gross,s.pct.plates,s.cap.plates,period,s.afterCap.plates);
+    const ifta=cappedAmt(gross,s.pct.ifta,s.cap.ifta,period,s.afterCap.ifta);
+    const maint=cappedAmt(gross,s.pct.maint,s.cap.maint,period,s.afterCap.maint);
+    const hwy=cappedAmt(gross,s.pct.hwy,s.cap.hwy,period,s.afterCap.hwy);
+    const tires=cappedAmt(gross,s.pct.tires,s.cap.tires,period,s.afterCap.tires);
+    const usdot=cappedAmt(gross,s.pct.usdot,s.cap.usdot,period,s.afterCap.usdot);
+    const next=fixed+fuel+factoring+tax+plates+ifta+maint+hwy+tires+usdot;
+    if(Math.abs(next-gross)<1e-6*Math.max(1,gross)){gross=next;break}
+    gross=next;
+  }
+  const r={period,miles,fixed,fuel,gross,rpm:gross/Math.max(1,miles)};
+  r.factoring=gross*s.pct.factoring; r.tax=gross*s.pct.tax;
+  r.plates=cappedAmt(gross,s.pct.plates,s.cap.plates,period,s.afterCap.plates);
+  r.ifta=cappedAmt(gross,s.pct.ifta,s.cap.ifta,period,s.afterCap.ifta);
+  r.maint=cappedAmt(gross,s.pct.maint,s.cap.maint,period,s.afterCap.maint);
+  r.hwy=cappedAmt(gross,s.pct.hwy,s.cap.hwy,period,s.afterCap.hwy);
+  r.tires=cappedAmt(gross,s.pct.tires,s.cap.tires,period,s.afterCap.tires);
+  r.usdot=cappedAmt(gross,s.pct.usdot,s.cap.usdot,period,s.afterCap.usdot);
+  return r;
+}
+
+function brokerEmailText(){
+  const s=getSettings();
+  const sc=$("brokerScenario").value;
+  let period="month", miles=s.miles.otrMonth, label="OTR Monthly";
+  if(sc==="LOCAL_MONTH"){period="month"; miles=s.miles.localMonth; label="Local Monthly";}
+  if(sc==="OTR_YEAR"){period="year"; miles=s.miles.otrYear; label="OTR Yearly";}
+  if(sc==="LOCAL_YEAR"){period="year"; miles=s.miles.localYear; label="Local Yearly";}
+  const r=solveGrossRequired(s,miles,period);
+  const mode=s.fleetMode?"FLEET MODE (includes payroll)":"OWNER‑OP MODE";
+  return `Minimum All‑In Rate Basis (${mode})
+
+Scenario: ${label}
+Miles Assumed: ${miles.toLocaleString()}
+Minimum Sustainable Rate Needed: ${money(r.rpm)} per mile
+
+Assumptions:
+- Fuel: $${s.fuelPrice.toFixed(3)}/gal
+- MPG: ${s.truckMpg.toFixed(2)}
+- Factoring: ${(s.pct.factoring*100).toFixed(2)}% of gross
+- Tax reserve: ${(s.pct.tax*100).toFixed(2)}% of gross (no cap)
+- Annual capped reserves (monthly uses cap/12 unless “Continue after cap” ON)
+
+Included: household + business fixed costs, fuel, factoring, tax reserve, and reserve funding.
+`;
+}
+function refreshBrokers(){ $("brokerText").value=brokerEmailText(); }
+$("brokerScenario").addEventListener("change",refreshBrokers);
+$("btnCopyBroker").addEventListener("click",()=>{
+  navigator.clipboard?.writeText($("brokerText").value);
+  alert("Copied. Paste into email/text.");
+});
+
+function loadProfiles(key){ return loadJSON(key, []); }
+function saveProfiles(key, list){ saveJSON(key, list); }
+function filterProfiles(list,q){
+  q=(q||"").toLowerCase().trim();
+  if(!q) return list.slice(0,50);
+  return list.filter(p=>{
+    const hay=`${p.name||""} ${p.city||""} ${p.state||""} ${p.zip||""} ${p.phone||""} ${p.email||""} ${p.address||""} ${p.notes||""} ${p.contact||""} ${p.mc||""}`.toLowerCase();
+    return hay.includes(q);
+  }).slice(0,50);
+}
+function renderPick(sel, items){
+  sel.innerHTML="";
+  items.forEach(p=>{
+    const o=document.createElement("option");
+    o.value=p.id;
+    const suffix = p.mc ? ` • MC ${p.mc}` : "";
+    o.textContent=`${p.name||"(no name)"} — ${p.city||""} ${p.state||""} ${p.phone||""}${suffix}`.trim();
+    sel.appendChild(o);
+  });
+}
+function upsertProfile(key, profile){
+  let list=loadProfiles(key);
+  if(!profile.id) profile.id=uuid();
+  profile.updatedAt=new Date().toISOString();
+  const idx=list.findIndex(p=>p.id===profile.id || ((p.name||"").toLowerCase()===(profile.name||"").toLowerCase() && (p.zip||"")===(profile.zip||"")));
+  if(idx>=0) list[idx]={...list[idx],...profile};
+  else list.unshift(profile);
+  saveProfiles(key,list);
+  return profile.id;
+}
+function deleteProfile(key,id){ saveProfiles(key, loadProfiles(key).filter(p=>p.id!==id)); }
+function clearProfiles(key){ saveProfiles(key, []); }
+
+function fill(prefix,p){
+  ["name","phone","city","state","address","zip","email","notes","contact","mc"].forEach(f=>{
+    const el=$(prefix+"_"+f);
+    if(el) el.value = p?.[f]||"";
+  });
+}
+function read(prefix){
+  const o={};
+  ["name","phone","city","state","address","zip","email","notes","contact","mc"].forEach(f=>{
+    const el=$(prefix+"_"+f);
+    if(el) o[f]=(el.value||"").trim();
+  });
+  return o;
+}
+
+let selectedShipper=null, selectedConsignee=null, selectedBroker=null;
+
+function refreshDirShippers(){
+  const list=loadProfiles(KEY_SHIPPERS);
+  renderPick($("shipperPick"), filterProfiles(list, $("shipperSearch").value));
+}
+function refreshDirConsignees(){
+  const list=loadProfiles(KEY_CONSIGNEES);
+  renderPick($("consigneePick"), filterProfiles(list, $("consigneeSearch").value));
+}
+function refreshDirBrokers(){
+  const list=loadProfiles(KEY_BROKERS);
+  renderPick($("brokerPick"), filterProfiles(list, $("brokerSearch").value));
+}
+
+$("shipperSearch").addEventListener("input",refreshDirShippers);
+$("consigneeSearch").addEventListener("input",refreshDirConsignees);
+$("brokerSearch").addEventListener("input",refreshDirBrokers);
+
+$("shipperPick").addEventListener("change",()=>{
+  selectedShipper=$("shipperPick").value;
+  const p=loadProfiles(KEY_SHIPPERS).find(x=>x.id===selectedShipper);
+  fill("shipper",p);
+});
+$("consigneePick").addEventListener("change",()=>{
+  selectedConsignee=$("consigneePick").value;
+  const p=loadProfiles(KEY_CONSIGNEES).find(x=>x.id===selectedConsignee);
+  fill("consignee",p);
+});
+$("brokerPick").addEventListener("change",()=>{
+  selectedBroker=$("brokerPick").value;
+  const p=loadProfiles(KEY_BROKERS).find(x=>x.id===selectedBroker);
+  fill("broker",p);
+});
+
+$("btnDirSaveShipper").addEventListener("click",()=>{
+  const data=read("shipper");
+  if(!data.name){alert("Shipper name required.");return;}
+  selectedShipper=upsertProfile(KEY_SHIPPERS,{id:selectedShipper,...data});
+  refreshDirShippers(); alert("Saved.");
+});
+$("btnDirDeleteShipper").addEventListener("click",()=>{
+  if(!selectedShipper){alert("Select a shipper first.");return;}
+  deleteProfile(KEY_SHIPPERS, selectedShipper); selectedShipper=null; fill("shipper",null); refreshDirShippers();
+});
+$("btnDirClearShippers").addEventListener("click",()=>{
+  if(confirm("Clear all shippers on this device?")){ clearProfiles(KEY_SHIPPERS); selectedShipper=null; fill("shipper",null); refreshDirShippers(); }
+});
+
+$("btnDirSaveConsignee").addEventListener("click",()=>{
+  const data=read("consignee");
+  if(!data.name){alert("Consignee name required.");return;}
+  selectedConsignee=upsertProfile(KEY_CONSIGNEES,{id:selectedConsignee,...data});
+  refreshDirConsignees(); alert("Saved.");
+});
+$("btnDirDeleteConsignee").addEventListener("click",()=>{
+  if(!selectedConsignee){alert("Select a consignee first.");return;}
+  deleteProfile(KEY_CONSIGNEES, selectedConsignee); selectedConsignee=null; fill("consignee",null); refreshDirConsignees();
+});
+$("btnDirClearConsignees").addEventListener("click",()=>{
+  if(confirm("Clear all consignees on this device?")){ clearProfiles(KEY_CONSIGNEES); selectedConsignee=null; fill("consignee",null); refreshDirConsignees(); }
+});
+
+$("btnDirSaveBroker").addEventListener("click",()=>{
+  const data=read("broker");
+  if(!data.name){alert("Broker name required.");return;}
+  selectedBroker=upsertProfile(KEY_BROKERS,{id:selectedBroker,...data});
+  refreshDirBrokers(); alert("Saved.");
+});
+$("btnDirDeleteBroker").addEventListener("click",()=>{
+  if(!selectedBroker){alert("Select a broker first.");return;}
+  deleteProfile(KEY_BROKERS, selectedBroker); selectedBroker=null; fill("broker",null); refreshDirBrokers();
+});
+$("btnDirClearBrokers").addEventListener("click",()=>{
+  if(confirm("Clear all brokers on this device?")){ clearProfiles(KEY_BROKERS); selectedBroker=null; fill("broker",null); refreshDirBrokers(); }
+});
+
+/* Trip/Load */
+let tlEditingId=null;
+function getLoads(){ return loadJSON(KEY_LOADS, []); }
+function saveLoads(list){ saveJSON(KEY_LOADS, list); }
+function getLastEq(){ return loadJSON(KEY_LAST_EQ, {truck:"", trailer:""}); }
+function setLastEq(eq){ saveJSON(KEY_LAST_EQ, eq); }
+
+function setTLMode(mode){
+  $("tlMode").textContent = mode;
+  $("btnTLBack").style.display = (mode!=="Trip/Load Home") ? "inline-block" : "none";
+  $("triploadHome").style.display = (mode==="Trip/Load Home") ? "block" : "none";
+  $("triploadFormWrap").style.display = (mode==="Create/Edit Load") ? "block" : "none";
+  $("triploadPastWrap").style.display = (mode==="Past Loads") ? "block" : "none";
+}
+function homeTLRefresh(){
+  const loads=getLoads();
+  $("tlCount").textContent = String(loads.length);
+  const eq=getLastEq();
+  $("tlLastEq").textContent = (eq.truck||eq.trailer) ? `${eq.truck||"—"} / ${eq.trailer||"—"}` : "—";
+}
+$("btnTLNew").addEventListener("click",()=>{ openNewLoad(); });
+$("btnTLPast").addEventListener("click",()=>{ openPastLoads(); });
+$("btnTLBack").addEventListener("click",()=>{ setTLMode("Trip/Load Home"); $("tlMsg").textContent="—"; homeTLRefresh(); });
+
+function clearValidation(){
+  ["f_loadId","f_pickupDate","f_deliveryDate","f_rate"].forEach(id=>$(id).classList.remove("danger"));
+}
+function showValidation(msg, missingIds){
+  $("tlMsg").textContent = msg;
+  clearValidation();
+  (missingIds||[]).forEach(id=>$(id).classList.add("danger"));
+}
+
+function datalistFill(dlId, profiles){
+  const dl=$(dlId);
+  dl.innerHTML="";
+  profiles.slice(0,100).forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.name||"";
+    dl.appendChild(opt);
+  });
+}
+
+function selectFill(selId, profiles, placeholder){
+  const sel=$(selId);
+  if(!sel) return;
+  sel.innerHTML="";
+  const ph=document.createElement("option");
+  ph.value="";
+  ph.textContent=placeholder||"— Select saved —";
+  sel.appendChild(ph);
+  profiles.forEach(p=>{
+    const opt=document.createElement("option");
+    opt.value=p.id;
+    opt.textContent=p.name + (p.city?(" • "+p.city+", "+p.state):"");
+    sel.appendChild(opt);
+  });
+}
+
+function refreshDatalists(){
+  const sh=loadProfiles(KEY_SHIPPERS);
+  const co=loadProfiles(KEY_CONSIGNEES);
+  const br=loadProfiles(KEY_BROKERS);
+  datalistFill("dl_shippers", sh);
+  datalistFill("dl_consignees", co);
+  datalistFill("dl_brokers", br);
+  selectFill("sel_shippers", sh, "— Select saved shipper —");
+  selectFill("sel_consignees", co, "— Select saved consignee —");
+  selectFill("sel_brokers", br, "— Select saved broker —");
+}
+
+function findProfileByName(key, name){
+  name=(name||"").trim().toLowerCase();
+  if(!name) return null;
+  return loadProfiles(key).find(p=>(p.name||"").trim().toLowerCase()===name) || null;
+}
+function applyCompany(prefix, p){
+  if(!p) return;
+  $(prefix+"_address").value=p.address||"";
+  $(prefix+"_city").value=p.city||"";
+  $(prefix+"_state").value=p.state||"";
+  $(prefix+"_zip").value=p.zip||"";
+  $(prefix+"_phone").value=p.phone||"";
+  $(prefix+"_email").value=p.email||"";
+  const contactEl=$(prefix+"_contact");
+  if(contactEl) contactEl.value=p.contact||"";
+  const mcEl=$(prefix+"_mc");
+  if(mcEl) mcEl.value=p.mc||"";
+}
+function wireAutoFill(){
+  $("f_shipper_name").addEventListener("change",()=>applyCompany("f_shipper", findProfileByName(KEY_SHIPPERS, $("f_shipper_name").value)));
+  $("f_consignee_name").addEventListener("change",()=>applyCompany("f_consignee", findProfileByName(KEY_CONSIGNEES, $("f_consignee_name").value)));
+  $("f_broker_name").addEventListener("change",()=>{
+    const p=findProfileByName(KEY_BROKERS, $("f_broker_name").value);
+    if(!p) return;
+    applyCompany("f_broker", p);
+    $("f_broker_contact").value=p.contact||"";
+    $("f_broker_mc").value=p.mc||"";
+  });
+}
+
+function readCompany(prefix){
+  return {
+    name: ($(prefix+"_name").value||"").trim(),
+    address:($(prefix+"_address").value||"").trim(),
+    city:($(prefix+"_city").value||"").trim(),
+    state:($(prefix+"_state").value||"").trim(),
+    zip:($(prefix+"_zip").value||"").trim(),
+    contact:($(prefix+"_contact").value||"").trim(),
+    phone:($(prefix+"_phone").value||"").trim(),
+    email:($(prefix+"_email").value||"").trim(),
+    mc: ($(prefix+"_mc")?($(prefix+"_mc").value||"").trim():""),
+    notes:""
+  };
+}
+
+$("btnSaveShipper").addEventListener("click",()=>{
+  const c=readCompany("f_shipper");
+  if(!c.name){alert("Shipper Name required.");return;}
+  upsertProfile(KEY_SHIPPERS, c);
+  refreshDatalists();
+  alert("Saved shipper.");
+});
+$("btnSaveConsignee").addEventListener("click",()=>{
+  const c=readCompany("f_consignee");
+  if(!c.name){alert("Consignee Name required.");return;}
+  upsertProfile(KEY_CONSIGNEES, c);
+  refreshDatalists();
+  alert("Saved consignee.");
+});
+$("btnSaveBroker").addEventListener("click",()=>{
+  const c=readCompany("f_broker");
+  c.mc = ($("f_broker_mc").value||"").trim();
+  if(!c.name){alert("Broker Name required.");return;}
+  upsertProfile(KEY_BROKERS, c);
+  refreshDatalists();
+  alert("Saved broker.");
+});
+
+
+// Saved dropdown recall (mobile-friendly)
+$("sel_shippers")?.addEventListener("change", (e)=>{
+  const id=e.target.value; if(!id) return;
+  const p=loadProfiles(KEY_SHIPPERS).find(x=>x.id===id);
+  if(p) fill("f_shipper", p);
+});
+$("sel_consignees")?.addEventListener("change", (e)=>{
+  const id=e.target.value; if(!id) return;
+  const p=loadProfiles(KEY_CONSIGNEES).find(x=>x.id===id);
+  if(p) fill("f_consignee", p);
+});
+$("sel_brokers")?.addEventListener("change", (e)=>{
+  const id=e.target.value; if(!id) return;
+  const p=loadProfiles(KEY_BROKERS).find(x=>x.id===id);
+  if(p){ fill("f_broker", p); if($("f_broker_mc")) $("f_broker_mc").value=p.mc||""; }
+});
+
+function formLoadToObj(mode){
+  const s=getSettings();
+  const obj={
+    id: tlEditingId || uuid(),
+    updatedAt:new Date().toISOString(),
+    loadId: ($("f_loadId").value||"").trim(),
+    status: $("f_status").value,
+    pickupDate: $("f_pickupDate").value,
+    deliveryDate: $("f_deliveryDate").value,
+    notes: $("f_notes").value||"",
+    shipper: readCompany("f_shipper"),
+    consignee: readCompany("f_consignee"),
+    broker: {...readCompany("f_broker"), mc:($("f_broker_mc").value||"").trim()},
+    equipment:{
+      truck: ($("f_truck").value||"").trim(),
+      trailer: ($("f_trailer").value||"").trim(),
+      useLast: $("f_useLastEq").value==="true"
+    },
+    details:{
+      commodity: ($("f_commodity").value||"").trim(),
+      weight: num($("f_weight").value),
+      pallets: num($("f_pallets").value),
+      temp: ($("f_temp").value||"").trim()
+    },
+    financial:{
+      rate: num($("f_rate").value),
+      deadhead: num($("f_deadhead").value),
+      loaded: num($("f_loaded").value),
+      gallons: num($("f_gallons").value),
+      hoursAway: num($("f_hoursAway").value),
+      misc: num($("f_misc").value),
+      payStatus: $("f_payStatus").value,
+      remit: $("f_remit").value||"",
+      netTerms: ($("f_netTerms").value||"").trim(),
+      invoiceNo: ($("f_invoiceNo").value||"").trim(),
+      invoiceDate: $("f_invoiceDate").value,
+      paidDate: $("f_paidDate").value,
+      payMethod: $("f_payMethod").value||"",
+      attachRatecon: ($("f_attach_ratecon").files[0]?.name)||"",
+      attachBol: ($("f_attach_bol").files[0]?.name)||""
+    }
+  };
+  if(mode==="close" && !obj.loadId){
+    const stamp = new Date().toISOString().slice(0,10).replaceAll("-","");
+    obj.loadId = "LOAD-"+stamp+"-"+String(Math.floor(Math.random()*9000)+1000);
+  }
+  if(!obj.financial.hoursAway) obj.financial.hoursAway = s.hoursPerLoad;
+  return obj;
+}
+
+function resetForm(){
+  tlEditingId=null;
+  clearValidation();
+  $("tlMsg").textContent="—";
+  [
+    "f_loadId","f_pickupDate","f_deliveryDate","f_notes",
+    "f_shipper_name","f_shipper_address","f_shipper_city","f_shipper_state","f_shipper_zip","f_shipper_contact","f_shipper_phone","f_shipper_email",
+    "f_consignee_name","f_consignee_address","f_consignee_city","f_consignee_state","f_consignee_zip","f_consignee_contact","f_consignee_phone","f_consignee_email",
+    "f_broker_name","f_broker_address","f_broker_contact","f_broker_phone","f_broker_email","f_broker_mc",
+    "f_truck","f_trailer","f_commodity","f_weight","f_pallets","f_temp",
+    "f_rate","f_deadhead","f_loaded","f_gallons","f_hoursAway","f_misc",
+    "f_remit","f_netTerms","f_invoiceNo","f_invoiceDate","f_paidDate"
+  ].forEach(id=>{ const el=$(id); if(el){ el.value=""; el.classList.remove("danger"); }});
+  $("f_status").value="Planned";
+  $("f_payStatus").value="Uninvoiced";
+  $("f_useLastEq").value="true";
+  $("f_payMethod").value="";
+  $("f_mpg").value="";
+  $("k_net").textContent="—";
+  $("k_otraff").textContent="—";
+  try{ $("f_attach_ratecon").value=""; $("f_attach_bol").value=""; }catch(e){}
+}
+
+function fillForm(obj){
+  tlEditingId=obj.id;
+  clearValidation();
+  $("f_loadId").value=obj.loadId||"";
+  $("f_status").value=obj.status||"Planned";
+  $("f_pickupDate").value=obj.pickupDate||"";
+  $("f_deliveryDate").value=obj.deliveryDate||"";
+  $("f_notes").value=obj.notes||"";
+
+  $("f_shipper_name").value=obj.shipper?.name||"";
+  applyCompany("f_shipper", obj.shipper);
+  $("f_shipper_contact").value=obj.shipper?.contact||"";
+
+  $("f_consignee_name").value=obj.consignee?.name||"";
+  applyCompany("f_consignee", obj.consignee);
+  $("f_consignee_contact").value=obj.consignee?.contact||"";
+
+  $("f_broker_name").value=obj.broker?.name||"";
+  applyCompany("f_broker", obj.broker);
+  $("f_broker_contact").value=obj.broker?.contact||"";
+  $("f_broker_mc").value=obj.broker?.mc||"";
+
+  $("f_truck").value=obj.equipment?.truck||"";
+  $("f_trailer").value=obj.equipment?.trailer||"";
+  $("f_useLastEq").value=String(obj.equipment?.useLast!==false);
+
+  $("f_commodity").value=obj.details?.commodity||"";
+  $("f_weight").value=obj.details?.weight||"";
+  $("f_pallets").value=obj.details?.pallets||"";
+  $("f_temp").value=obj.details?.temp||"";
+
+  $("f_rate").value=obj.financial?.rate||"";
+  $("f_deadhead").value=obj.financial?.deadhead||"";
+  $("f_loaded").value=obj.financial?.loaded||"";
+  $("f_gallons").value=obj.financial?.gallons||"";
+  $("f_hoursAway").value=obj.financial?.hoursAway||"";
+  $("f_misc").value=obj.financial?.misc||"";
+  $("f_payStatus").value=obj.financial?.payStatus||"Uninvoiced";
+
+  $("f_remit").value=obj.financial?.remit||"";
+  $("f_netTerms").value=obj.financial?.netTerms||"";
+  $("f_invoiceNo").value=obj.financial?.invoiceNo||"";
+  $("f_invoiceDate").value=obj.financial?.invoiceDate||"";
+  $("f_paidDate").value=obj.financial?.paidDate||"";
+  $("f_payMethod").value=obj.financial?.payMethod||"";
+
+  if(obj.financial?.attachRatecon || obj.financial?.attachBol){
+    $("tlMsg").textContent = `Saved attachment names: RateCon=${obj.financial.attachRatecon||"—"}, BOL=${obj.financial.attachBol||"—"}`;
+  } else {
+    $("tlMsg").textContent="—";
+  }
+  refreshTripKpis();
+}
+
+function validateForClose(obj){
+  const missing=[];
+  if(!obj.loadId) missing.push("f_loadId");
+  if(!obj.pickupDate) missing.push("f_pickupDate");
+  if(!obj.deliveryDate) missing.push("f_deliveryDate");
+  if(!obj.financial.rate) missing.push("f_rate");
+  if(missing.length){
+    showValidation("Missing required fields for Save & Close. Fill highlighted fields.", missing);
+    return false;
+  }
+  showValidation("OK. Saved.", []);
+  return true;
+}
+
+function openNewLoad(){
+  refreshDatalists();
+  resetForm();
+  const eq=getLastEq();
+  const s=getSettings();
+  $("f_pickupDate").value=todayISO();
+  $("f_deliveryDate").value=todayISO();
+  $("f_useLastEq").value="true";
+  if($("f_useLastEq").value==="true"){
+    $("f_truck").value=eq.truck||"";
+    $("f_trailer").value=eq.trailer||"";
+  }
+  $("f_hoursAway").value=String(s.hoursPerLoad||48);
+  $("tlTitle").textContent="Create Load";
+  $("tlSub").textContent="Save Draft anytime.";
+  setTLMode("Create/Edit Load");
+  refreshTripKpis();
+}
+function openPastLoads(){
+  setTLMode("Past Loads");
+  renderPastLoads();
+}
+
+function refreshTripKpis(){
+  const s=getSettings();
+  const rate=num($("f_rate").value);
+  const dead=num($("f_deadhead").value);
+  const loaded=num($("f_loaded").value);
+  const miles=dead+loaded;
+  const gallons=num($("f_gallons").value);
+  const hours=num($("f_hoursAway").value) || s.hoursPerLoad || 0;
+  const misc=num($("f_misc").value);
+
+  const mpg = gallons>0 ? (miles/gallons) : 0;
+  $("f_mpg").value = mpg>0 ? mpg.toFixed(2) : "";
+
+  if(!rate){ $("k_net").textContent="—"; $("k_otraff").textContent="—"; return; }
+
+  const fuel = gallons>0 ? gallons*s.fuelPrice : fuelCostForMiles(s,miles, mpg||0);
+  const gross=rate;
+  const deductions =
+    fuel + misc +
+    gross*s.pct.factoring +
+    gross*s.pct.tax +
+    gross*s.pct.plates +
+    gross*s.pct.ifta +
+    gross*s.pct.maint +
+    gross*s.pct.hwy +
+    gross*s.pct.tires +
+    gross*s.pct.usdot;
+
+  const net = gross - deductions;
+  const otraf = hours>0 ? (net/hours) : 0;
+  $("k_net").textContent = money(net);
+  $("k_otraff").textContent = hours>0 ? (money(otraf)+"/hr") : "—";
+}
+
+["f_rate","f_deadhead","f_loaded","f_gallons","f_hoursAway","f_misc"].forEach(id=>$(id).addEventListener("input",refreshTripKpis));
+
+function upsertLoad(obj){
+  let list=getLoads();
+  const idx=list.findIndex(x=>x.id===obj.id);
+  if(idx>=0) list[idx]=obj; else list.unshift(obj);
+  saveLoads(list);
+}
+
+$("btnTLSaveDraft").addEventListener("click",()=>{
+  const obj=formLoadToObj("draft");
+  upsertLoad(obj);
+  showValidation("Draft saved.", []);
+  refreshAll();
+});
+$("btnTLSaveClose").addEventListener("click",()=>{
+  const obj=formLoadToObj("close");
+  const ok=validateForClose(obj);
+  if(!ok) return;
+  upsertLoad(obj);
+  if(obj.equipment?.useLast){
+    setLastEq({truck:obj.equipment.truck||"", trailer:obj.equipment.trailer||""});
+  }
+  setTLMode("Trip/Load Home");
+  homeTLRefresh();
+  refreshAll();
+});
+
+$("btnTLPrevDup").addEventListener("click",()=>{
+  const list=getLoads();
+  if(!list.length){ alert("No previous load to duplicate."); return; }
+  const prev=list[0];
+  const copy=structuredClone(prev);
+  copy.id=uuid();
+  copy.updatedAt=new Date().toISOString();
+  copy.loadId="";
+  copy.financial.invoiceNo=""; copy.financial.invoiceDate=""; copy.financial.paidDate="";
+  copy.financial.payStatus="Uninvoiced";
+  copy.financial.payMethod="";
+  copy.financial.attachRatecon=""; copy.financial.attachBol="";
+  fillForm(copy);
+  $("tlTitle").textContent="Create Load (Duplicated)";
+  $("tlSub").textContent="Invoice/payment fields cleared.";
+  setTLMode("Create/Edit Load");
+  refreshTripKpis();
+});
+
+function summarizeLoad(l){
+  const broker=l.broker?.name||"—";
+  const ship=l.shipper?.name||"—";
+  const cons=l.consignee?.name||"—";
+  const rate = money(l.financial?.rate||0);
+  const dates = `${l.pickupDate||"—"} → ${l.deliveryDate||"—"}`;
+  return {broker, ship, cons, rate, dates};
+}
+
+function renderPastLoads(){
+  const q=($("pastSearch").value||"").toLowerCase().trim();
+  const st=($("pastStatus").value||"").trim();
+  const dfrom=$("pastFrom").value;
+  const dto=$("pastTo").value;
+
+  const list=getLoads().filter(l=>{
+    if(st && (l.status||"")!==st) return false;
+    const pd=l.pickupDate||"";
+    if(dfrom && pd && pd<dfrom) return false;
+    if(dto && pd && pd>dto) return false;
+    if(!q) return true;
+    const hay=`${l.loadId||""} ${l.broker?.name||""} ${l.shipper?.name||""} ${l.consignee?.name||""}`.toLowerCase();
+    return hay.includes(q);
+  });
+
+  const box=$("pastList");
+  if(!list.length){ box.innerHTML='<div class="muted">No loads found.</div>'; return; }
+
+  box.innerHTML = list.slice(0,200).map(l=>{
+    const s=summarizeLoad(l);
+    return `<div class="listItem">
+      <div class="listTop">
+        <div>
+          <div><b class="linklike" data-act="open" data-id="${l.id}">${l.loadId||"(no load #)"} </b>
+          <span class="pill">${l.status||"Planned"}</span></div>
+          <div class="muted">${s.broker} • ${s.dates}</div>
+          <div class="muted">Shipper: ${s.ship} • Consignee: ${s.cons}</div>
+        </div>
+        <div style="text-align:right">
+          <div><b>${s.rate}</b></div>
+          <div class="small">Pay: ${l.financial?.payStatus||"Uninvoiced"}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px">
+        <button class="btn" data-act="dup" data-id="${l.id}">Duplicate</button>
+        <button class="btn bad" data-act="del" data-id="${l.id}">Delete</button>
+      </div>
+    </div>`;
+  }).join("");
+}
+
+$("pastSearch").addEventListener("input",renderPastLoads);
+$("pastStatus").addEventListener("change",renderPastLoads);
+$("pastFrom").addEventListener("change",renderPastLoads);
+$("pastTo").addEventListener("change",renderPastLoads);
+
+$("pastList").addEventListener("click",(e)=>{
+  const t=e.target;
+  const id=t.dataset?.id;
+  const act=t.dataset?.act;
+  if(!id || !act) return;
+  const list=getLoads();
+  const found=list.find(x=>x.id===id);
+  if(!found) return;
+
+  if(act==="open"){
+    refreshDatalists();
+    fillForm(found);
+    $("tlTitle").textContent="Edit Load";
+    $("tlSub").textContent="Save Draft or Save & Close.";
+    setTLMode("Create/Edit Load");
+    refreshTripKpis();
+  }
+  if(act==="dup"){
+    const copy=structuredClone(found);
+    copy.id=uuid();
+    copy.updatedAt=new Date().toISOString();
+    copy.loadId="";
+    copy.financial.invoiceNo=""; copy.financial.invoiceDate=""; copy.financial.paidDate="";
+    copy.financial.payStatus="Uninvoiced"; copy.financial.payMethod="";
+    copy.financial.attachRatecon=""; copy.financial.attachBol="";
+    refreshDatalists();
+    fillForm(copy);
+    $("tlTitle").textContent="Create Load (Duplicated)";
+    $("tlSub").textContent="Invoice/payment fields cleared.";
+    setTLMode("Create/Edit Load");
+    refreshTripKpis();
+  }
+  if(act==="del"){
+    if(!confirm("Delete this load?")) return;
+    saveLoads(list.filter(x=>x.id!==id));
+    renderPastLoads();
+    refreshAll();
+  }
+});
+
+function renderBlueprint(){
+  const s=getSettings();
+  const loads=getLoads();
+
+  const {hh,biz}=monthlyTotals(s);
+  const mode=s.fleetMode?"FLEET MODE":"OWNER‑OP MODE";
+
+  const scenarios=[
+    ["OTR Monthly","month",s.miles.otrMonth],
+    ["Local Monthly","month",s.miles.localMonth],
+    ["OTR Yearly","year",s.miles.otrYear],
+    ["Local Yearly","year",s.miles.localYear],
+  ];
+
+  const scenHtml = scenarios.map(([name,period,miles])=>{
+    const r=solveGrossRequired(s,miles,period);
+    return `<div class="card">
+      <h3 style="margin:0 0 6px">${name}</h3>
+      <div class="kpi"><b>Minimum $/mile</b><div>${money(r.rpm)}/mile</div></div>
+      <div class="kpi"><b>Gross required</b><div>${money(r.gross)}</div></div>
+      <div class="kpi"><b>Fixed</b><div>${money(r.fixed)}</div></div>
+      <div class="kpi"><b>Fuel</b><div>${money(r.fuel)}</div></div>
+      <div class="muted mono" style="margin-top:8px">factoring ${money(r.factoring)}
+tax ${money(r.tax)}
+plates ${money(r.plates)} | ifta ${money(r.ifta)} | maint ${money(r.maint)}
+hwy ${money(r.hwy)} | tires ${money(r.tires)} | usdot ${money(r.usdot)}</div>
+    </div>`;
+  }).join("");
+
+  const delivered = loads.filter(l=> (l.status||"") === "Delivered" || (l.status||"") === "Paid");
+  const hoursAwayYTD = delivered.reduce((a,l)=>a+num(l.financial?.hoursAway),0);
+
+  const netYTD = delivered.reduce((a,l)=>{
+    const gross=num(l.financial?.rate);
+    const miles=num(l.financial?.deadhead)+num(l.financial?.loaded);
+    const gallons=num(l.financial?.gallons);
+    const misc=num(l.financial?.misc);
+    const fuel = gallons>0 ? gallons*s.fuelPrice : fuelCostForMiles(s,miles);
+    const deductions =
+      fuel + misc +
+      gross*s.pct.factoring +
+      gross*s.pct.tax +
+      gross*s.pct.plates +
+      gross*s.pct.ifta +
+      gross*s.pct.maint +
+      gross*s.pct.hwy +
+      gross*s.pct.tires +
+      gross*s.pct.usdot;
+    return a + (gross - deductions);
+  },0);
+
+  const otrafYTD = hoursAwayYTD>0 ? netYTD/hoursAwayYTD : 0;
+
+  const otrLoads = s.avgMilesLoadOtr>0 ? s.miles.otrMonth/s.avgMilesLoadOtr : 0;
+  const localLoads = s.avgMilesLoadLocal>0 ? s.miles.localMonth/s.avgMilesLoadLocal : 0;
+  const otrHours = otrLoads*s.hoursPerLoad;
+  const localHours = localLoads*s.hoursPerLoad;
+
+  $("blueprintOut").innerHTML = `
+    <div class="kpi"><b>Mode</b><div>${mode}</div></div>
+    <div class="kpi"><b>Household monthly</b><div>${money(hh)}</div></div>
+    <div class="kpi"><b>Business monthly</b><div>${money(biz)}</div></div>
+    <div class="kpi"><b>O.T.R.A.F.F (Delivered/Paid loads)</b><div>${hoursAwayYTD>0?money(otrafYTD)+"/hr":"Enter delivered loads to calculate"}</div></div>
+    <div class="kpi"><b>Delivered/Paid net total</b><div>${money(netYTD)}</div></div>
+    <div class="kpi"><b>Monthly hours away model</b><div>OTR ${otrHours.toFixed(1)} hrs • Local ${localHours.toFixed(1)} hrs</div></div>
+    <div class="grid cols2" style="margin-top:12px">${scenHtml}</div>
+  `;
+}
+
+function refreshAll(){
+  renderBlueprint();
+  refreshBrokers();
+  homeTLRefresh();
+  refreshDirShippers();
+  refreshDirConsignees();
+  refreshDirBrokers();
+  refreshDatalists();
+  if($("triploadPastWrap").style.display!=="none") renderPastLoads();
+}
+
+(function init(){
+  const saved=loadJSON(KEY_SETTINGS,null);
+  setSettings(saved||structuredClone(DEFAULTS));
+  saveJSON(KEY_SETTINGS,getSettings());
+  setTLMode("Trip/Load Home");
+  refreshDatalists();
+  wireAutoFill();
+  refreshAll();
+})();
+</script>
+
+<script>
+(function(){
+  var dot=document.getElementById('jsAlive');
+  if(dot){ dot.style.background = '#19b56f'; }
+  try{
+    if(location.protocol === 'file:'){
+      var g=document.getElementById('protocolGuard');
+      if(g){ g.style.display='block'; }
+      var c=document.getElementById('guardClose');
+      if(c){ c.addEventListener('click', function(){ g.style.display='none'; }); }
+    }
+  }catch(e){}
+})();
+</script>
+
+</body>
+</html>
