@@ -391,6 +391,7 @@
         <button class="btn primary" id="btnScenario">Scenario</button>
         <button class="btn good" id="btnActual">Actual</button>
         <button class="btn" id="btnCompare">Compare</button>
+        <button class="btn" id="btnYTD">Year-to-Date</button>
       </div>
     </div>
 
@@ -1165,6 +1166,33 @@ $("btnCompare")?.addEventListener("click", () => {
 
       <div class="small">
         If Δ Net is negative, reality ate profit. If Δ Hours is positive, time ate profit.
+      </div>
+    </details>
+  `;
+});
+
+$("btnYTD")?.addEventListener("click", () => {
+  const out = $("scenarioOut");
+  if (!out) return;
+
+  const y = calcYTD(loads, settings);
+
+  out.innerHTML = `
+    <details open>
+      <summary>Year-to-Date DNA (${y.count} delivered loads)</summary>
+
+      <div class="kpi"><b>Total miles</b><div>${y.totalMiles.toFixed(0)}</div></div>
+      <div class="kpi"><b>Total revenue</b><div>${fmtMoney(y.totalRevenue)}</div></div>
+      <div class="kpi"><b>Total fuel cost</b><div>${fmtMoney(y.totalFuelCost)}</div></div>
+      <div class="kpi"><b>Total net</b><div>${fmtMoney(y.totalNet)}</div></div>
+
+      <div class="kpi"><b>Gross RPM</b><div>${fmtMoney(y.grossRPM)}</div></div>
+      <div class="kpi"><b>Net RPM</b><div>${fmtMoney(y.netRPM)}</div></div>
+      <div class="kpi"><b>Avg MPG</b><div>${y.avgMPG.toFixed(2)}</div></div>
+      <div class="kpi"><b>YTD O.T.R.A.F.F</b><div>${fmtMoney(y.ytdOtraff)}/hr</div></div>
+
+      <div class="small">
+        This is your truck’s real baseline. Use it to set next year’s minimum RPM and your time value.
       </div>
     </details>
   `;
@@ -2132,6 +2160,81 @@ function calcActual(load, settings){
     grossRPM,
     netRPM,
     otraff
+  };
+}
+
+function calcYTD(loads, settings){
+  // only Delivered/Paid loads
+  const delivered = loads.filter(l => l.status === "Delivered" || l.status === "Paid");
+
+  // recompute fresh every time (no stacking bug)
+  let totalDeadhead = 0;
+  let totalLoaded = 0;
+  let totalMiles = 0;
+
+  let totalRevenue = 0;
+  let totalGallons = 0;
+  let totalFuelCost = 0;
+
+  let totalHoursAway = 0;
+  let totalNet = 0;
+
+  for (const l of delivered){
+    const deadhead = Number(l.deadhead || 0);
+    const loaded = Number(l.loaded || 0);
+    const ret = Number(l.returnMiles || 0);
+    const miles = deadhead + loaded + ret;
+
+    const revenue = Number(l.rate || 0);
+    const gallons = Number(l.gallons || 0);
+    const fuelPrice = Number(l.fuelPriceActual || settings.fuelPrice || 0);
+    const fuelCost = gallons * fuelPrice;
+
+    // hours away: prefer actual; fallback estimate
+    let hrs = Number(l.hoursAway);
+    if (!isFinite(hrs) || hrs <= 0){
+      const est = estimateHoursAwayForLoad(l, miles);
+      hrs = est.total;
+    }
+
+    // net: reuse actual logic so rules are consistent
+    const a = calcActual(l, settings);
+
+    totalDeadhead += deadhead;
+    totalLoaded += loaded;
+    totalMiles += miles;
+
+    totalRevenue += revenue;
+    totalGallons += gallons;
+    totalFuelCost += fuelCost;
+
+    totalHoursAway += hrs;
+    totalNet += a.netRevenue;
+  }
+
+  const grossRPM = totalMiles > 0 ? totalRevenue / totalMiles : 0;
+  const netRPM = totalMiles > 0 ? totalNet / totalMiles : 0;
+  const avgMPG = totalGallons > 0 ? totalMiles / totalGallons : 0;
+  const ytdOtraff = totalHoursAway > 0 ? totalNet / totalHoursAway : 0;
+
+  return {
+    count: delivered.length,
+
+    totalDeadhead,
+    totalLoaded,
+    totalMiles,
+
+    totalRevenue,
+    totalGallons,
+    totalFuelCost,
+
+    totalHoursAway,
+    totalNet,
+
+    grossRPM,
+    netRPM,
+    avgMPG,
+    ytdOtraff
   };
 }
 
