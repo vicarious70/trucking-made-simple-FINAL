@@ -990,7 +990,43 @@ const saveJSON = (k, v) => {
     if (dot) dot.style.background = "#19b56f";
   }
 
+  function validateSettingsRequired(){
+    const req = ["companyName","companyAddress","companyPhone","companyEmail"];
+    const misses = [];
+
+    req.forEach(id => {
+      const el = $(id);
+      if (!el) return;
+      const v = (el.value || "").trim();
+      if (!v){
+       el.classList.add("danger");
+       misses.push(id);
+      } else {
+        el.classList.remove("danger");
+      }
+    });
+
+    // basic email format check
+    const em = ($("companyEmail")?.value || "").trim();
+    if (em && !/^\S+@\S+\.\S+$/.test(em)){
+      $("companyEmail")?.classList.add("danger");
+      misses.push("companyEmail (invalid)");
+    }
+
+    if (misses.length){
+      alert("Please complete required Company Profile fields in Settings.");
+      return false;
+    }
+    return true;
+  }
+
   function setTab(name){
+    const active = q(".tabbtn.active")?.dataset?.tab;
+    if (active === "settings" && name !== "settings"){
+      if (!validateSettingsRequired()) return;
+      clearDanger();
+   }
+    
     qa(".tabbtn").forEach(b => b.classList.toggle("active", b.dataset.tab === name));
     qa(".tab").forEach(s => s.style.display = "none");
     const sec = $("tab-" + name);
