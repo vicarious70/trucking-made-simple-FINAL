@@ -1546,10 +1546,18 @@ if (delBtn) delBtn.style.display = currentLoadId ? "" : "none";
       ["f_rate","Load Rate ($)"],
       ["f_pickupDate","Pickup Date"],
       ["f_deliveryDate","Delivery Date"],
+
       ["f_shipper_name","Shipper Name"],
       ["f_consignee_name","Consignee Name"],
-      ["f_broker_name","Broker Name"]
-    ];
+
+      ["f_broker_name","Broker Name"],
+      ["f_broker_phone","Broker Phone"],
+      ["f_broker_email","Broker Email"],
+
+      ["f_deadhead","Deadhead miles"],
+      ["f_loaded","Loaded miles"]
+   ];
+
     for (const [id,label] of req){
       const el = $(id);
       const v = (el.value || "").trim();
@@ -1558,6 +1566,13 @@ if (delBtn) delBtn.style.display = currentLoadId ? "" : "none";
         misses.push(label);
       }
     }
+
+    const bem = ($("f_broker_email")?.value || "").trim();
+    if (bem && !/^\S+@\S+\.\S+$/.test(bem)){
+      $("f_broker_email")?.classList.add("danger");
+      misses.push("Broker Email (invalid)");
+    }
+    
     if (misses.length){
       $("tlMsg").textContent = "Missing required: " + misses.join(", ");
       return false;
