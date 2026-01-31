@@ -193,6 +193,21 @@
     <button class="tabbtn" data-tab="invoice">Invoice</button>
     <button class="tabbtn" data-tab="profiles">Directories</button>
   </div>
+
+  <div style="margin-top:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <button class="btn primary" id="btnCompanyCard">
+      Company: <span id="companyBtnName">—</span>
+    </button>
+
+  <div id="companyCardDrop" class="card" style="display:none;min-width:280px">
+    <h3 style="margin:0 0 6px">Company Card</h3>
+    <div class="small"><b id="cc_name">—</b></div>
+    <div class="small" id="cc_addr">—</div>
+    <div class="small" id="cc_phone">—</div>
+    <div class="small" id="cc_email">—</div>
+  </div>
+</div>
+
   <div class="muted" style="margin-top:8px">
     No-Touch Rule: Only <b>Settings</b> is editable system truth. Trip/Load is data entry. Blueprint/Brokers are read-only outputs. Data saves on this device (localStorage).
   </div>
@@ -1029,6 +1044,7 @@ const saveJSON = (k, v) => {
         }
 
         saveJSON(KEY.settings, settings);
+        refreshCompanyButton();
         updateTriploadHome();
         renderBlueprint();
         renderBrokerEmail();
@@ -1039,6 +1055,7 @@ const saveJSON = (k, v) => {
     $("btnResetDefaults")?.addEventListener("click", () => {
       settings = {...defaults};
       saveJSON(KEY.settings, settings);
+      refreshCompanyButton();
       bindSettings();
       renderBlueprint();
       renderBrokerEmail();
@@ -1046,6 +1063,27 @@ const saveJSON = (k, v) => {
     });
   }
 
+function refreshCompanyButton(){
+  const name = (settings.companyName || "").trim() || "—";
+  $("companyBtnName").textContent = name;
+
+  $("cc_name").textContent = name || "—";
+  $("cc_addr").textContent = (settings.companyAddress || "").trim() || "—";
+  $("cc_phone").textContent = (settings.companyPhone || "").trim() || "—";
+  $("cc_email").textContent = (settings.companyEmail || "").trim() || "—";
+}
+
+$("btnCompanyCard")?.addEventListener("click", () => {
+  const d = $("companyCardDrop");
+  if (!d) return;
+  const show = d.style.display === "none" || !d.style.display;
+  d.style.display = show ? "" : "none";
+  refreshCompanyButton();
+});
+
+// initial paint
+refreshCompanyButton();
+  
   function sumMonthlyFixed(){
     const hh = ["hh_house","hh_util","hh_car","hh_groc","hh_carGas","hh_gasUtil"].reduce((a,k)=>a+Number(settings[k]||0),0);
     const biz = ["biz_truck","biz_trailer","biz_ins","biz_phone","biz_park","biz_eld","biz_lb"].reduce((a,k)=>a+Number(settings[k]||0),0);
