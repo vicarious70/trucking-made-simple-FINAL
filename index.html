@@ -380,9 +380,21 @@
 
 <section id="tab-blueprint" class="tab" style="display:none">
   <div class="card">
-    <h2 style="margin:0 0 6px">Blueprint (Read-Only)</h2>
-    <div class="muted">Minimum sustainable rate per mile for each scenario + O.T.R.A.F.F from saved delivered loads.</div>
-    <div id="blueprintOut"></div>
+    <h2 style="margin:0 0 6px">Blueprint</h2>
+
+    <div class="row">
+      <div>
+        <label>Select Load</label>
+        <select id="bpLoadSelect"></select>
+      </div>
+      <div style="align-self:flex-end">
+        <button class="btn primary" id="btnScenario">Scenario</button>
+        <button class="btn good" id="btnActual">Actual</button>
+        <button class="btn" id="btnCompare">Compare</button>
+      </div>
+    </div>
+
+    <div id="scenarioOut" style="margin-top:12px"></div>
   </div>
 </section>
 
@@ -1024,6 +1036,8 @@ const saveJSON = (k, v) => {
     const active = q(".tabbtn.active")?.dataset?.tab;
     if (active === "settings" && name !== "settings"){
       if (!validateSettingsRequired()) return;
+      if (name === "blueprint") {
+      populateBlueprintLoads();
       clearDanger();
    }
     
@@ -1031,7 +1045,6 @@ const saveJSON = (k, v) => {
     qa(".tab").forEach(s => s.style.display = "none");
     const sec = $("tab-" + name);
     if (sec) sec.style.display = "";
-    if (name === "blueprint") renderBlueprint();
     if (name === "brokers") renderBrokerEmail();
     if (name === "tripload") updateTriploadHome();
     if (name === "profiles") renderDirectories();
@@ -1039,6 +1052,124 @@ const saveJSON = (k, v) => {
   }
 
   qa(".tabbtn").forEach(btn => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+
+  // -------- Blueprint Buttons --------
+
+$("btnScenario")?.addEventListener("click", () => {
+  const sel = $("bpLoadSelect");
+  const out = $("scenarioOut");
+  if (!sel || !out) return;
+
+  const load = loads.find(l => l.id === sel.value);
+  if (!load){
+    out.innerHTML = "<div class='muted'>No load selected.</div>";
+    return;
+  }
+
+  const s = calcScenario(load, settings);
+
+  out.innerHTML = `
+    <details open>
+      <summary>Scenario Blueprint</summary>
+
+      <div class="kpi"><b>Trip miles</b><div>${s.tripMiles.toFixed(0)}</div></div>
+      <div class="kpi"><b>Total hours away</b><div>${s.totalHoursAway.toFixed(2)}</div></div>
+
+      <div class="kpi"><b>Fuel gallons needed</b><div>${s.gallonsNeeded.toFixed(1)}</div></div>
+      <div class="kpi"><b>Fuel stops</b><div>${s.fuelStops}</div></div>
+
+      <div class="kpi"><b>Net revenue</b><div>${fmtMoney(s.netRevenue)}</div></div>
+      <div class="kpi"><b>O.T.R.A.F.F</b><div>${fmtMoney(s.otraff)}/hr</div></div>
+    </details>
+  `;
+});
+
+$("btnActual")?.addEventListener("click", () => {
+  const sel = $("bpLoadSelect");
+  const out = $("scenarioOut");
+  if (!sel || !out) return;
+
+  const load = loads.find(l => l.id === sel.value);
+  if (!load){
+    out.innerHTML = "<div class='muted'>No load selected.</div>";
+    return;
+  }
+
+  if (load.status !== "Delivered" && load.status !== "Paid"){
+    out.innerHTML = "<div class='muted'>Actual is only available after delivery.</div>";
+    return;
+  }
+
+  const a = calcActual(load, settings);
+
+  out.innerHTML = `
+    <details open>
+      <summary>Actual Blueprint</summary>
+
+      <div class="kpi"><b>Trip miles</b><div>${a.tripMiles.toFixed(0)}</div></div>
+      <div class="kpi"><b>Actual hours away</b><div>${a.hoursAway.toFixed(2)}</div></div>
+
+      <div class="kpi"><b>Fuel gallons used</b><div>${a.gallonsUsed.toFixed(1)}</div></div>
+      <div class="kpi"><b>Fuel cost</b><div>${fmtMoney(a.fuelCost)}</div></div>
+
+      <div class="kpi"><b>Net revenue</b><div>${fmtMoney(a.netRevenue)}</div></div>
+      <div class="kpi"><b>O.T.R.A.F.F</b><div>${fmtMoney(a.otraff)}/hr</div></div>
+    </details>
+  `;
+});
+
+$("btnCompare")?.addEventListener("click", () => {
+  const sel = $("bpLoadSelect");
+  const out = $("scenarioOut");
+  if (!sel || !out) return;
+
+  const load = loads.find(l => l.id === sel.value);
+  if (!load){
+    out.innerHTML = "<div class='muted'>No load selected.</div>";
+    return;
+  }
+
+  // Compare only makes sense after delivery
+  if (load.status !== "Delivered" && load.status !== "Paid"){
+    out.innerHTML = "<div class='muted'>Compare is only available after delivery.</div>";
+    return;
+  }
+
+  const s = calcScenario(load, settings);
+  const a = calcActual(load, settings);
+
+  const dNet = a.netRevenue - s.netRevenue;
+  const dOtraff = a.otraff - s.otraff;
+  const dFuel = a.fuelCost - s.fuelCost;
+  const dHours = a.hoursAway - s.totalHoursAway;
+
+  out.innerHTML = `
+    <details open>
+      <summary>Scenario vs Actual</summary>
+
+      <div class="kpi"><b>Scenario net</b><div>${fmtMoney(s.netRevenue)}</div></div>
+      <div class="kpi"><b>Actual net</b><div>${fmtMoney(a.netRevenue)}</div></div>
+      <div class="kpi"><b>Δ Net</b><div>${fmtMoney(dNet)}</div></div>
+
+      <div class="kpi"><b>Scenario O.T.R.A.F.F</b><div>${fmtMoney(s.otraff)}/hr</div></div>
+      <div class="kpi"><b>Actual O.T.R.A.F.F</b><div>${fmtMoney(a.otraff)}/hr</div></div>
+      <div class="kpi"><b>Δ O.T.R.A.F.F</b><div>${fmtMoney(dOtraff)}/hr</div></div>
+
+      <div class="kpi"><b>Scenario fuel</b><div>${fmtMoney(s.fuelCost)}</div></div>
+      <div class="kpi"><b>Actual fuel</b><div>${fmtMoney(a.fuelCost)}</div></div>
+      <div class="kpi"><b>Δ Fuel</b><div>${fmtMoney(dFuel)}</div></div>
+
+      <div class="kpi"><b>Scenario hours away</b><div>${s.totalHoursAway.toFixed(2)}</div></div>
+      <div class="kpi"><b>Actual hours away</b><div>${a.hoursAway.toFixed(2)}</div></div>
+      <div class="kpi"><b>Δ Hours</b><div>${dHours.toFixed(2)}</div></div>
+
+      <div class="small">
+        If Δ Net is negative, reality ate profit. If Δ Hours is positive, time ate profit.
+      </div>
+    </details>
+  `;
+});
+  
   // Print invoice
  $("btnPrintInvoice")?.addEventListener("click", () => {
   window.print();
@@ -1841,6 +1972,167 @@ function estimateHoursAwayForLoad(l, miles){
 
   const total = driveHrs + stopHrs + breakHrs + (Math.max(0, unloadWaitMin)/60) + Math.max(0, detentionHrs);
   return {driveHrs, stops, stopHrs, breaks, breakHrs, unloadWaitMin, detentionHrs, total};
+}
+
+function calcScenario(load, settings){
+  // 1. Miles
+  const deadhead = Number(load.deadhead || 0);
+  const loaded = Number(load.loaded || 0);
+  const ret = Number(load.returnMiles || 0);
+  const tripMiles = deadhead + loaded + ret;
+
+  // 2. Speed + driving hours
+  const speed = Number(settings.avgSpeedMph || 65);
+  const drivingHours = speed > 0 ? tripMiles / speed : 0;
+
+  // 3. Fuel estimate
+  const mpg = Number(settings.truckMpg || 6.5);
+  const gallonsNeeded = mpg > 0 ? tripMiles / mpg : 0;
+
+  const tank = Number(settings.tankGallons || 0);
+  const fuelStops =
+    tank > 0 ? Math.max(0, Math.ceil(gallonsNeeded / tank) - 1) : 0;
+
+  const fuelStopMinutes = Number(settings.fuelStopMinutes || 15);
+  const fuelStopHours = fuelStops * (fuelStopMinutes / 60);
+
+  // 4. DOT breaks
+  const breakInterval = Number(settings.dotBreakIntervalHours || 8);
+  const breakMinutes = Number(settings.dotBreakMinutes || 30);
+
+  const breaks = breakInterval > 0
+    ? Math.floor(drivingHours / breakInterval)
+    : 0;
+
+  const breakHours = breaks * (breakMinutes / 60);
+
+  // 5. Wait / detention
+  const waitMinutes =
+    load.unloadWaitMinutes != null
+      ? Number(load.unloadWaitMinutes)
+      : Number(settings.unloadWaitMinutesDefault || 0);
+
+  const waitHours = waitMinutes / 60;
+  const detentionHours = Number(load.detentionHours || 0);
+
+  // 6. Total hours away
+  const totalHoursAway =
+    drivingHours +
+    fuelStopHours +
+    breakHours +
+    waitHours +
+    detentionHours;
+
+  // 7. Revenue
+  const revenue = Number(load.rate || 0);
+
+  // 8. Fuel cost
+  const fuelPrice = Number(settings.fuelPrice || 0);
+  const fuelCost = gallonsNeeded * fuelPrice;
+
+  // 9. Reserves + factoring
+  const factoring = revenue * Number(settings.pct_factoring || 0);
+  const reserves = revenue * (
+    Number(settings.pct_tax || 0) +
+    Number(settings.pct_plates || 0) +
+    Number(settings.pct_ifta || 0) +
+    Number(settings.pct_maint || 0) +
+    Number(settings.pct_hwy || 0) +
+    Number(settings.pct_tires || 0) +
+    Number(settings.pct_usdot || 0)
+  );
+
+  // 10. Net
+  const netRevenue =
+    revenue - fuelCost - factoring - reserves;
+
+  // 11. Ratios
+  const grossRPM = tripMiles > 0 ? revenue / tripMiles : 0;
+  const netRPM = tripMiles > 0 ? netRevenue / tripMiles : 0;
+  const otraff =
+    totalHoursAway > 0 ? netRevenue / totalHoursAway : 0;
+
+  // 12. Return scenario object
+  return {
+    tripMiles,
+    drivingHours,
+    gallonsNeeded,
+    fuelStops,
+    fuelStopHours,
+    breaks,
+    breakHours,
+    waitHours,
+    detentionHours,
+    totalHoursAway,
+
+    revenue,
+    fuelCost,
+    factoring,
+    reserves,
+    netRevenue,
+
+    grossRPM,
+    netRPM,
+    otraff
+  };
+}
+
+function calcActual(load, settings){
+  // Miles
+  const deadhead = Number(load.deadhead || 0);
+  const loaded = Number(load.loaded || 0);
+  const ret = Number(load.returnMiles || 0);
+  const tripMiles = deadhead + loaded + ret;
+
+  // Fuel (ACTUAL)
+  const gallonsUsed = Number(load.gallons || 0);
+  const fuelPrice =
+    Number(load.fuelPriceActual || settings.fuelPrice || 0);
+
+  const fuelCost = gallonsUsed * fuelPrice;
+
+  // Hours away (ACTUAL if entered, else estimate)
+  let hoursAway = Number(load.hoursAway);
+  if (!isFinite(hoursAway) || hoursAway <= 0){
+    const est = estimateHoursAwayForLoad(load, tripMiles);
+    hoursAway = est.total;
+  }
+
+  // Revenue
+  const revenue = Number(load.rate || 0);
+
+  // Reserves + factoring (same rules)
+  const factoring = revenue * Number(settings.pct_factoring || 0);
+  const reserves = revenue * (
+    Number(settings.pct_tax || 0) +
+    Number(settings.pct_plates || 0) +
+    Number(settings.pct_ifta || 0) +
+    Number(settings.pct_maint || 0) +
+    Number(settings.pct_hwy || 0) +
+    Number(settings.pct_tires || 0) +
+    Number(settings.pct_usdot || 0)
+  );
+
+  // Net
+  const netRevenue =
+    revenue - fuelCost - factoring - reserves;
+
+  // Ratios
+  const grossRPM = tripMiles > 0 ? revenue / tripMiles : 0;
+  const netRPM = tripMiles > 0 ? netRevenue / tripMiles : 0;
+  const otraff = hoursAway > 0 ? netRevenue / hoursAway : 0;
+
+  return {
+    tripMiles,
+    gallonsUsed,
+    fuelCost,
+    hoursAway,
+    revenue,
+    netRevenue,
+    grossRPM,
+    netRPM,
+    otraff
+  };
 }
 
   function computeComputedForLoad(l){
