@@ -1460,7 +1460,8 @@ function autoSaveRemittance(manual = false){
   function applyLoadToForm(l){
     clearDanger();
     currentLoadId = l?.id || null;
-
+    
+    $("f_remit").value = l.remit || defaultRemit || "";
     $("f_loadId").value = l?.loadId || "";
     $("f_status").value = l?.status || "Planned";
     $("f_loadDate").value = l?.loadDate || "";
