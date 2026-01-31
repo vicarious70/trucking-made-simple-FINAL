@@ -901,6 +901,13 @@
     if (!isFinite(x)) return "—";
     return x.toLocaleString(undefined, {style:"currency", currency:"USD"});
   };
+
+// ---- JS Alive / DOM Ready ----
+window.addEventListener("DOMContentLoaded", () => {
+  const dot = document.getElementById("jsAlive");
+  if (dot) dot.style.background = "#19b56f"; // green
+});
+
   const fmtNum = (n, d=2) => {
     const x = Number(n);
     if (!isFinite(x)) return "—";
